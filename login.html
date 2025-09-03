@@ -1,144 +1,1103 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR HUB – Auto Redirect with Ad</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AR Hub - Welcome to Your Augmented Reality Social Platform">
+  <meta name="keywords" content="AR Hub, augmented reality, social platform, login, register, account management">
+  <meta name="author" content="xAI">
+  <title>AR Hub - Login</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK CDN (Updated to v11.x.x) -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics-compat.js"></script>
+  
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #ffffff;
-    }
-    /* লোগো */
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      user-select: none;
-      text-align: center;
-    }
-    .icon {
-      width: clamp(60px, 15vw, 100px);
-      height: auto;
-    }
-    .title .ar {
-      font-size: clamp(24px, 6vw, 48px);
-      font-weight: bold;
-      color: #0f2b46;
-    }
-    .title .hub {
-      font-size: clamp(18px, 4vw, 32px);
-      font-weight: bold;
-      color: #0f2b46;
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --secondary-color: #f8fafc;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #22c55e;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
     }
 
-    /* অ্যাড কন্টেইনার */
-    #ad-container {
-      margin-top: 20px;
-      width: 100%;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none; /* Prevent text selection */
+    }
+
+    /* Allow text selection only for input fields */
+    input, textarea {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      padding: 10px;
+      justify-content: center;
+      padding: 1rem;
+      line-height: 1.5;
     }
-    .ad-box {
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 4s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.3; }
+      50% { transform: scale(1.1) rotate(180deg); opacity: 0.1; }
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      font-weight: 400;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--secondary-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 1rem 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+      background: white;
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .form-container {
+      padding: 2rem 1.5rem;
+    }
+
+    .form-section {
       display: none;
-      max-width: 100%;
+      animation: fadeIn 0.4s ease-in-out;
     }
-    .ad-box.active {
+
+    .form-section.active {
       display: block;
     }
 
-    /* মোবাইল ফ্রেন্ডলি */
-    iframe {
-      max-width: 100% !important;
-      height: auto !important;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .input-container {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      background: white;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-input.error {
+      border-color: var(--error-color);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 0.875rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary-color);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .submit-btn:hover::before {
+      left: 100%;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .forgot-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .forgot-link:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      position: relative;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    .divider span {
+      background: white;
+      padding: 0 1rem;
+    }
+
+    .social-login {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      background: white;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      gap: 0.5rem;
+    }
+
+    .social-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      max-width: 400px;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.4s ease;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success-color);
+    }
+
+    .notification.error {
+      background: var(--error-color);
+    }
+
+    .notification.warning {
+      background: var(--warning-color);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        margin: 0.5rem;
+        max-width: none;
+      }
+
+      .header {
+        padding: 1.5rem 1rem 1rem;
+      }
+
+      .logo {
+        font-size: 1.75rem;
+      }
+
+      .form-container {
+        padding: 1.5rem 1rem;
+      }
+
+      .tab-btn {
+        padding: 0.875rem 0.25rem;
+        font-size: 0.8rem;
+      }
+
+      .social-login {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-input.loading {
+      background-image: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.1) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .form-input.success {
+      border-color: var(--success-color);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+    }
+
+    .password-strength {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .strength-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--border-color);
+      border-radius: 2px;
+      transition: background-color 0.3s ease;
+    }
+
+    .strength-bar.weak { background: var(--error-color); }
+    .strength-bar.medium { background: var(--warning-color); }
+    .strength-bar.strong { background: var(--success-color); }
+
+    .error-message {
+      color: var(--error-color);
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+
+    .password-strength-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
     }
   </style>
 </head>
-<body>
-  <!-- লোগো সেন্টার -->
-  <div class="brand">
-    <svg class="icon" viewBox="0 0 100 100">
-      <rect x="5" y="5" width="90" height="90" rx="18" ry="18" fill="#0f2b46"/>
-      <circle cx="50" cy="50" r="28" fill="none" stroke="#ff6b6b" stroke-width="8"
-              stroke-linecap="round" stroke-dasharray="155 22" transform="rotate(-35 50 50)"/>
-      <polygon points="50,28 65,36 50,44 35,36" fill="#ffffff"/>
-      <polygon points="35,36 35,58 50,66 50,44" fill="#ffffff"/>
-      <polygon points="65,36 65,58 50,66 50,44" fill="#ffffff"/>
-      <polyline points="35,36 50,44 65,36" fill="none" stroke="#0f2b46" stroke-width="2"/>
-      <polyline points="35,36 35,58 50,66 65,58 65,36" fill="none" stroke="#0f2b46" stroke-width="2"/>
-      <line x1="50" y1="44" x2="50" y2="66" stroke="#0f2b46" stroke-width="2"/>
-    </svg>
-    <div class="title">
-      <span class="ar">AR</span>
-      <span class="hub">HUB</span>
-    </div>
-  </div>
-
-  <!-- অ্যাড কন্টেইনার -->
-  <div id="ad-container">
-    <!-- অ্যাড ১ -->
-    <div class="ad-box">
-      <script type="text/javascript">
-      atOptions = {
-        'key' : '63718988f07bc6d276f3c6a441757cae',
-        'format' : 'iframe',
-        'height' : 90,
-        'width' : 728,
-        'params' : {}
-      };
-      </script>
-      <script type="text/javascript" src="//www.highperformanceformat.com/63718988f07bc6d276f3c6a441757cae/invoke.js"></script>
+<body oncontextmenu="return false;"> <!-- Prevent right-click -->
+  <div id="notification" class="notification"></div>
+  
+  <div class="login-container">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-cube"></i> AR Hub
+      </div>
+      <div class="subtitle">Welcome to Your Augmented Reality Experience</div>
     </div>
 
-    <!-- অ্যাড ২ -->
-    <div class="ad-box">
-      <script type="text/javascript">
-      atOptions = {
-        'key' : 'c620af328467e6de19dc04af696ee0fb',
-        'format' : 'iframe',
-        'height' : 250,
-        'width' : 300,
-        'params' : {}
-      };
-      </script>
-      <script type="text/javascript" src="//www.highperformanceformat.com/c620af328467e6de19dc04af696ee0fb/invoke.js"></script>
+    <div class="tab-container">
+      <button class="tab-btn active" onclick="showTab('login')">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+      <button class="tab-btn" onclick="showTab('register')">
+        <i class="fas fa-user-plus"></i> Register
+      </button>
+      <button class="tab-btn" onclick="showTab('forgot')">
+        <i class="fas fa-key"></i> Recover
+      </button>
     </div>
 
-    <!-- অ্যাড ৩ -->
-    <div class="ad-box">
-      <script type="text/javascript">
-      atOptions = {
-        'key' : '78ade24182729fceea8e45203dad915b',
-        'format' : 'iframe',
-        'height' : 50,
-        'width' : 320,
-        'params' : {}
-      };
-      </script>
-      <script type="text/javascript" src="//www.highperformanceformat.com/78ade24182729fceea8e45203dad915b/invoke.js"></script>
+    <div class="form-container">
+      <!-- Login Form -->
+      <div id="login" class="form-section active">
+        <div class="form-group">
+          <label class="form-label" for="login-email">
+            <i class="fas fa-envelope"></i> Email Address
+          </label>
+          <div class="input-container">
+            <input type="email" id="login-email" class="form-input" 
+                   placeholder="example@domain.com" autocomplete="email" required 
+                   aria-label="Enter your email address" aria-describedby="login-email-error">
+            <div id="login-email-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">
+            <i class="fas fa-lock"></i> Password
+          </label>
+          <div class="input-container">
+            <input type="password" id="login-password" class="form-input" 
+                   placeholder="Enter your password" autocomplete="current-password" required 
+                   aria-label="Enter your password" aria-describedby="login-password-error">
+            <i class="fas fa-eye password-toggle" onclick="togglePassword('login-password')"></i>
+            <div id="login-password-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="handleLogin()">
+          <span class="btn-text" data-original="Login">Login</span>
+        </button>
+
+        <div class="divider">
+          <span>or</span>
+        </div>
+
+        <div class="social-login">
+          <a href="#" class="social-btn" onclick="socialLogin('google')">
+            <i class="fab fa-google"></i> Google
+          </a>
+          <a href="#" class="social-btn" onclick="socialLogin('facebook')">
+            <i class="fab fa-facebook-f"></i> Facebook
+          </a>
+        </div>
+
+        <a href="#" class="forgot-link" onclick="showTab('forgot')">
+          Forgot Password?
+        </a>
+      </div>
+
+      <!-- Registration Form -->
+      <div id="register" class="form-section">
+        <div class="form-group">
+          <label class="form-label" for="register-username">
+            <i class="fas fa-user"></i> Full Name
+          </label>
+          <div class="input-container">
+            <input type="text" id="register-username" class="form-input" 
+                   placeholder="Your full name" autocomplete="name" required 
+                   aria-label="Enter your full name" aria-describedby="register-username-error">
+            <div id="register-username-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="register-email">
+            <i class="fas fa-envelope"></i> Email Address
+          </label>
+          <div class="input-container">
+            <input type="email" id="register-email" class="form-input" 
+                   placeholder="example@domain.com" autocomplete="email" required 
+                   aria-label="Enter your email address" aria-describedby="register-email-error">
+            <div id="register-email-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="register-password">
+            <i class="fas fa-lock"></i> Password
+          </label>
+          <div class="input-container">
+            <input type="password" id="register-password" class="form-input" 
+                   placeholder="Create a strong password" 
+                   autocomplete="new-password" required oninput="checkPasswordStrength(this.value)" 
+                   aria-label="Enter your password" aria-describedby="register-password-error">
+            <i class="fas fa-eye password-toggle" onclick="togglePassword('register-password')"></i>
+            <div id="register-password-error" class="error-message" style="display: none;"></div>
+          </div>
+          <div id="password-strength" class="password-strength"></div>
+          <div id="password-strength-text" class="password-strength-text"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">
+            <i class="fas fa-check-circle"></i> Confirm Password
+          </label>
+          <div class="input-container">
+            <input type="password" id="confirm-password" class="form-input" 
+                   placeholder="Confirm your password" autocomplete="new-password" required 
+                   aria-label="Confirm your password" aria-describedby="confirm-password-error">
+            <i class="fas fa-eye password-toggle" onclick="togglePassword('confirm-password')"></i>
+            <div id="confirm-password-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="handleRegister()">
+          <span class="btn-text" data-original="Register">Register</span>
+        </button>
+
+        <div class="divider">
+          <span>or</span>
+        </div>
+
+        <div class="social-login">
+          <a href="#" class="social-btn" onclick="socialLogin('google')">
+            <i class="fab fa-google"></i> Google
+          </a>
+          <a href="#" class="social-btn" onclick="socialLogin('facebook')">
+            <i class="fab fa-facebook-f"></i> Facebook
+          </a>
+        </div>
+      </div>
+
+      <!-- Password Recovery Form -->
+      <div id="forgot" class="form-section">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <i class="fas fa-key" style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0.5rem;"></i>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Enter your email address. We'll send you a password reset link.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="forgot-email">
+            <i class="fas fa-envelope"></i> Registered Email
+          </label>
+          <div class="input-container">
+            <input type="email" id="forgot-email" class="form-input" 
+                   placeholder="Your email address" required 
+                   aria-label="Enter your registered email" aria-describedby="forgot-email-error">
+            <div id="forgot-email-error" class="error-message" style="display: none;"></div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="handleForgotPassword()">
+          <span class="btn-text" data-original="Send Reset Link">Send Reset Link</span>
+        </button>
+
+        <a href="#" class="forgot-link" onclick="showTab('login')" style="text-align: center; display: block;">
+          <i class="fas fa-arrow-left"></i> Back to Login
+        </a>
+      </div>
     </div>
   </div>
 
   <script>
-    const adBoxes = document.querySelectorAll(".ad-box");
+    // Prevent developer tools shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    });
 
-    // এলোমেলোভাবে একটি অ্যাড শো
-    const randomIndex = Math.floor(Math.random() * adBoxes.length);
-    adBoxes[randomIndex].classList.add("active");
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDY3z8akQu1QHHpXw-oFGLNjKUNuzgfsY",
+      authDomain: "ar-hub-e0d3f.firebaseapp.com",
+      databaseURL: "https://ar-hub-e0d3f-default-rtdb.firebaseio.com",
+      projectId: "ar-hub-e0d3f",
+      storageBucket: "ar-hub-e0d3f.firebasestorage.app",
+      messagingSenderId: "325272044889",
+      appId: "1:325272044889:web:56a66926c0e06561ad7848",
+      measurementId: "G-C6YLCC2S8Y"
+    };
 
-    // ৫ সেকেন্ড পরে রিডাইরেক্ট
-    setTimeout(() => {
-      window.location.href = "https://api.imgbb.com/";
-    }, 5000);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const analytics = firebase.analytics();
+
+    // Rate-limiting variables
+    let loginAttempts = 0;
+    const maxLoginAttempts = 5;
+    let lastLoginAttempt = 0;
+
+    // Notification System
+    function showNotification(message, type = 'success', duration = 4000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Email Validation
+    function validateEmail(email) {
+      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return regex.test(email.toLowerCase());
+    }
+
+    // Password Strength Check
+    function checkPasswordStrength(password) {
+      const strengthContainer = document.getElementById('password-strength');
+      const strengthText = document.getElementById('password-strength-text');
+      const bars = 4;
+      let strength = 0;
+
+      strengthContainer.innerHTML = '';
+      strengthText.textContent = '';
+
+      if (password.length >= 8) strength++;
+      if (/[a-z]/.test(password)) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+      for (let i = 0; i < bars; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'strength-bar';
+        if (i < strength) {
+          if (strength <= 2) {
+            bar.classList.add('weak');
+            strengthText.textContent = 'Weak Password';
+          } else if (strength <= 3) {
+            bar.classList.add('medium');
+            strengthText.textContent = 'Medium Password';
+          } else {
+            bar.classList.add('strong');
+            strengthText.textContent = 'Strong Password';
+          }
+        }
+        strengthContainer.appendChild(bar);
+      }
+
+      return strength;
+    }
+
+    // Password Toggle
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.nextElementSibling;
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    // Tab Switching
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+      
+      document.querySelectorAll('.form-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      setTimeout(() => {
+        document.getElementById(tabId).classList.add('active');
+      }, 150);
+
+      clearFormErrors();
+    }
+
+    // Clear Form Errors
+    function clearFormErrors() {
+      document.querySelectorAll('.form-input').forEach(input => {
+        input.classList.remove('error', 'success', 'loading');
+        const errorElement = document.getElementById(`${input.id}-error`);
+        if (errorElement) errorElement.style.display = 'none';
+      });
+    }
+
+    // Form Validation
+    function validateForm(fields) {
+      let isValid = true;
+      
+      fields.forEach(field => {
+        const input = document.getElementById(field.id);
+        const value = input.value.trim();
+        const errorElement = document.getElementById(`${field.id}-error`);
+        
+        input.classList.remove('error', 'success', 'loading');
+        if (errorElement) errorElement.style.display = 'none';
+        
+        if (!value) {
+          input.classList.add('error');
+          if (errorElement) {
+            errorElement.textContent = field.emptyMessage || 'This field is required';
+            errorElement.style.display = 'block';
+          }
+          showNotification(field.emptyMessage || 'This field is required', 'error');
+          isValid = false;
+        } else if (field.validator && !field.validator(value)) {
+          input.classList.add('error');
+          if (errorElement) {
+            errorElement.textContent = field.invalidMessage;
+            errorElement.style.display = 'block';
+          }
+          showNotification(field.invalidMessage, 'error');
+          isValid = false;
+        } else {
+          input.classList.add('success');
+        }
+      });
+      
+      return isValid;
+    }
+
+    // Loading State Management
+    function setLoading(element, isLoading) {
+      const btnText = element.querySelector('.btn-text') || element;
+      
+      if (isLoading) {
+        element.disabled = true;
+        btnText.innerHTML = '<span class="loading"></span>Processing...';
+        document.getElementById('login-email')?.classList.add('loading');
+        document.getElementById('login-password')?.classList.add('loading');
+        document.getElementById('register-email')?.classList.add('loading');
+        document.getElementById('register-password')?.classList.add('loading');
+        document.getElementById('confirm-password')?.classList.add('loading');
+        document.getElementById('forgot-email')?.classList.add('loading');
+      } else {
+        element.disabled = false;
+        btnText.textContent = btnText.getAttribute('data-original') || btnText.textContent;
+        document.getElementById('login-email')?.classList.remove('loading');
+        document.getElementById('login-password')?.classList.remove('loading');
+        document.getElementById('register-email')?.classList.remove('loading');
+        document.getElementById('register-password')?.classList.remove('loading');
+        document.getElementById('confirm-password')?.classList.remove('loading');
+        document.getElementById('forgot-email')?.classList.remove('loading');
+      }
+    }
+
+    // Social Login Handler
+    async function socialLogin(provider) {
+      if (provider !== 'google') {
+        showNotification(`${provider} login is not supported yet`, 'warning');
+        return;
+      }
+
+      const providerInstance = new firebase.auth.GoogleAuthProvider();
+      const socialBtn = document.querySelector(`.social-btn[onclick="socialLogin('google')"]`);
+      setLoading(socialBtn, true);
+
+      try {
+        const result = await auth.signInWithPopup(providerInstance);
+        const user = result.user;
+        analytics.logEvent('login', { method: 'google' });
+        showNotification(`Successfully logged in as ${user.displayName || 'user'}!`, 'success');
+        
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1500);
+      } catch (error) {
+        let errorMessage = 'Error with Google login.';
+        switch (error.code) {
+          case 'auth/popup-closed-by-user':
+            errorMessage = 'Login popup was closed.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network connection issue.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+        analytics.logEvent('login_failed', { method: 'google', error: error.code });
+      } finally {
+        setLoading(socialBtn, false);
+      }
+    }
+
+    // Login Handler
+    async function handleLogin() {
+      const button = event.target;
+
+      // Rate-limiting check
+      const now = Date.now();
+      if (loginAttempts >= maxLoginAttempts && now - lastLoginAttempt < 60000) {
+        showNotification('Too many attempts. Please try again after 1 minute.', 'error');
+        return;
+      }
+
+      const fields = [
+        {
+          id: 'login-email',
+          validator: validateEmail,
+          emptyMessage: 'Enter email address',
+          invalidMessage: 'Enter a valid email address'
+        },
+        {
+          id: 'login-password',
+          emptyMessage: 'Enter password'
+        }
+      ];
+
+      if (!validateForm(fields)) return;
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+
+      setLoading(button, true);
+      loginAttempts++;
+      lastLoginAttempt = Date.now();
+
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        analytics.logEvent('login', { method: 'email' });
+        loginAttempts = 0; // Reset attempts on success
+        showNotification(`Successfully logged in as ${user.email}!`, 'success');
+        
+        setTimeout(() => {
+          window.location.href = 'Index.html';
+        }, 1500);
+      } catch (error) {
+        let errorMessage = 'Error logging in.';
+        switch (error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'Email not registered.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Incorrect password.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many attempts. Try again later.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+        analytics.logEvent('login_failed', { method: 'email', error: error.code });
+      } finally {
+        setLoading(button, false);
+      }
+    }
+
+    // Registration Handler
+    async function handleRegister() {
+      const button = event.target;
+      const username = document.getElementById('register-username').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value.trim();
+      const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+      const fields = [
+        {
+          id: 'register-username',
+          emptyMessage: 'Enter name',
+          validator: (value) => value.length >= 2,
+          invalidMessage: 'Name must be at least 2 characters'
+        },
+        {
+          id: 'register-email',
+          validator: validateEmail,
+          emptyMessage: 'Enter email address',
+          invalidMessage: 'Enter a valid email address'
+        },
+        {
+          id: 'register-password',
+          emptyMessage: 'Enter password',
+          validator: (value) => value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value),
+          invalidMessage: 'Password must be at least 8 characters, include an uppercase letter and a number'
+        },
+        {
+          id: 'confirm-password',
+          emptyMessage: 'Confirm password'
+        }
+      ];
+
+      if (!validateForm(fields)) return;
+
+      if (password !== confirmPassword) {
+        document.getElementById('confirm-password').classList.add('error');
+        const errorElement = document.getElementById('confirm-password-error');
+        if (errorElement) {
+          errorElement.textContent = 'Passwords do not match';
+          errorElement.style.display = 'block';
+        }
+        showNotification('Passwords do not match', 'error');
+        return;
+      }
+
+      const strength = checkPasswordStrength(password);
+      if (strength < 4) {
+        document.getElementById('register-password').classList.add('error');
+        const errorElement = document.getElementById('register-password-error');
+        if (errorElement) {
+          errorElement.textContent = 'Please create a stronger password';
+          errorElement.style.display = 'block';
+        }
+        showNotification('Please create a stronger password', 'error');
+        return;
+      }
+
+      setLoading(button, true);
+
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        await user.updateProfile({
+          displayName: username
+        });
+
+        analytics.logEvent('sign_up', { method: 'email' });
+        showNotification(`Successfully registered as ${username}!`, 'success');
+        
+        setTimeout(() => {
+          window.location.href = 'Index.html';
+        }, 1500);
+      } catch (error) {
+        let errorMessage = 'Error registering.';
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email is already in use.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+        analytics.logEvent('sign_up_failed', { method: 'email', error: error.code });
+      } finally {
+        setLoading(button, false);
+      }
+    }
+
+    // Password Recovery Handler
+    async function handleForgotPassword() {
+      const button = event.target;
+      const fields = [
+        {
+          id: 'forgot-email',
+          validator: validateEmail,
+          emptyMessage: 'Enter email address',
+          invalidMessage: 'Enter a valid email address'
+        }
+      ];
+
+      if (!validateForm(fields)) return;
+
+      const email = document.getElementById('forgot-email').value.trim();
+
+      setLoading(button, true);
+
+      try {
+        await auth.sendPasswordResetEmail(email);
+        analytics.logEvent('password_reset', { method: 'email' });
+        showNotification('Password reset link sent to your email.', 'success');
+        
+        setTimeout(() => {
+          showTab('login');
+          document.getElementById('forgot-email').value = '';
+        }, 1500);
+      } catch (error) {
+        let errorMessage = 'Error sending reset link.';
+        switch (error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'Email not registered.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        showNotification(errorMessage, 'error');
+        analytics.logEvent('password_reset_failed', { method: 'email', error: error.code });
+      } finally {
+        setLoading(button, false);
+      }
+    }
+
+    // Page Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.submit-btn .btn-text').forEach(btn => {
+        btn.setAttribute('data-original', btn.textContent);
+      });
+
+      clearFormErrors();
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-selected', btn.classList.contains('active') ? 'true' : 'false');
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            b.setAttribute('aria-selected', 'false');
+          });
+          btn.setAttribute('aria-selected', 'true');
+        });
+      });
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          window.location.href = 'Index.html';
+        }
+      });
+    });
   </script>
 </body>
 </html>
