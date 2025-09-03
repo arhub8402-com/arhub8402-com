@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AR HUB – Auto Redirect with Ad</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #ffffff;
+    }
+    /* লোগো */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      user-select: none;
+      text-align: center;
+    }
+    .icon {
+      width: clamp(60px, 15vw, 100px);
+      height: auto;
+    }
+    .title .ar {
+      font-size: clamp(24px, 6vw, 48px);
+      font-weight: bold;
+      color: #0f2b46;
+    }
+    .title .hub {
+      font-size: clamp(18px, 4vw, 32px);
+      font-weight: bold;
+      color: #0f2b46;
+    }
+
+    /* অ্যাড কন্টেইনার */
+    #ad-container {
+      margin-top: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+    .ad-box {
+      display: none;
+      max-width: 100%;
+    }
+    .ad-box.active {
+      display: block;
+    }
+
+    /* মোবাইল ফ্রেন্ডলি */
+    iframe {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- লোগো সেন্টার -->
+  <div class="brand">
+    <svg class="icon" viewBox="0 0 100 100">
+      <rect x="5" y="5" width="90" height="90" rx="18" ry="18" fill="#0f2b46"/>
+      <circle cx="50" cy="50" r="28" fill="none" stroke="#ff6b6b" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="155 22" transform="rotate(-35 50 50)"/>
+      <polygon points="50,28 65,36 50,44 35,36" fill="#ffffff"/>
+      <polygon points="35,36 35,58 50,66 50,44" fill="#ffffff"/>
+      <polygon points="65,36 65,58 50,66 50,44" fill="#ffffff"/>
+      <polyline points="35,36 50,44 65,36" fill="none" stroke="#0f2b46" stroke-width="2"/>
+      <polyline points="35,36 35,58 50,66 65,58 65,36" fill="none" stroke="#0f2b46" stroke-width="2"/>
+      <line x1="50" y1="44" x2="50" y2="66" stroke="#0f2b46" stroke-width="2"/>
+    </svg>
+    <div class="title">
+      <span class="ar">AR</span>
+      <span class="hub">HUB</span>
+    </div>
+  </div>
+
+  <!-- অ্যাড কন্টেইনার -->
+  <div id="ad-container">
+    <!-- অ্যাড ১ -->
+    <div class="ad-box">
+      <script type="text/javascript">
+      atOptions = {
+        'key' : '63718988f07bc6d276f3c6a441757cae',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/63718988f07bc6d276f3c6a441757cae/invoke.js"></script>
+    </div>
+
+    <!-- অ্যাড ২ -->
+    <div class="ad-box">
+      <script type="text/javascript">
+      atOptions = {
+        'key' : 'c620af328467e6de19dc04af696ee0fb',
+        'format' : 'iframe',
+        'height' : 250,
+        'width' : 300,
+        'params' : {}
+      };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/c620af328467e6de19dc04af696ee0fb/invoke.js"></script>
+    </div>
+
+    <!-- অ্যাড ৩ -->
+    <div class="ad-box">
+      <script type="text/javascript">
+      atOptions = {
+        'key' : '78ade24182729fceea8e45203dad915b',
+        'format' : 'iframe',
+        'height' : 50,
+        'width' : 320,
+        'params' : {}
+      };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/78ade24182729fceea8e45203dad915b/invoke.js"></script>
+    </div>
+  </div>
+
+  <script>
+    const adBoxes = document.querySelectorAll(".ad-box");
+
+    // এলোমেলোভাবে একটি অ্যাড শো
+    const randomIndex = Math.floor(Math.random() * adBoxes.length);
+    adBoxes[randomIndex].classList.add("active");
+
+    // ৫ সেকেন্ড পরে রিডাইরেক্ট
+    setTimeout(() => {
+      window.location.href = "https://api.imgbb.com/";
+    }, 5000);
+  </script>
+</body>
+</html>
