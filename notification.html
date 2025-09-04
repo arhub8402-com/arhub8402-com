@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AR Hub - Notifications">
+  <meta name="keywords" content="AR Hub, notifications, account info">
+  <meta name="author" content="xAI">
+  <title>AR Hub - Notifications</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK CDN -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics-compat.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --secondary-color: #f8fafc; /* Light theme background */
+      --text-primary: #1e293b; /* Light theme text */
+      --text-secondary: #64748b; /* Light theme secondary text */
+      --border-color: #e2e8f0; /* Light theme border */
+      --success-color: #22c55e;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding-top: 70px;
+      color: var(--text-primary);
+      user-select: none;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+
+    .top-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 10px 15px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      animation: slideDown 0.5s ease-out;
+      user-select: none;
+    }
+
+    .back-btn, .issue-btn {
+      color: white;
+      text-decoration: none;
+      font-size: 1rem;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: background-color 0.3s ease;
+    }
+
+    .back-btn:hover, .issue-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .issue-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 15px;
+      width: 100%;
+    }
+
+    .account-info {
+      background: white;
+      margin-bottom: 20px;
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Notification Controls */
+    .notification-controls {
+      background: white;
+      margin-bottom: 15px;
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-container {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 35px 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      background: white;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .control-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    .control-btn.primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .control-btn.primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .control-btn.secondary {
+      background: var(--secondary-color);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .control-btn.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .control-btn.danger {
+      background: var(--error-color);
+      color: white;
+    }
+
+    .control-btn.danger:hover {
+      background: #dc2626;
+    }
+
+    .control-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .notification-stats {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .notification-list {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .notification-item {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification-item:hover {
+      background: var(--secondary-color);
+    }
+
+    .notification-item.unread {
+      background: #e8f5e8;
+      border-left: 3px solid var(--success-color);
+    }
+
+    .notification-item.hidden {
+      display: none;
+    }
+
+    .notification-icon {
+      font-size: 1.2rem;
+    }
+
+    .notification-icon.like {
+      color: var(--success-color);
+    }
+
+    .notification-icon.comment {
+      color: var(--primary-color);
+    }
+
+    .notification-icon.follow {
+      color: var(--warning-color);
+    }
+
+    .no-notifications {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .notification {
+      position: fixed;
+      top: 80px;
+      right: 15px;
+      width: calc(100% - 30px);
+      max-width: 400px;
+      padding: 12px 15px;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.4s ease;
+      z-index: 1000;
+      user-select: none;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success-color);
+    }
+
+    .notification.error {
+      background: var(--error-color);
+    }
+
+    .notification.warning {
+      background: var(--warning-color);
+    }
+
+    .issue-form-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1002;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .issue-form {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .issue-form h3 {
+      margin-bottom: 15px;
+    }
+
+    .issue-form input, .issue-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 1rem;
+    }
+
+    .issue-form textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .issue-form button {
+      background: var(--primary-color);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .issue-form button:hover {
+      background: var(--primary-dark);
+    }
+
+    .issue-form .close-btn {
+      background: var(--error-color);
+      margin-left: 10px;
+    }
+
+    .issue-form .close-btn:hover {
+      background: #dc2626;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .notification-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-group {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .search-container {
+        min-width: 100%;
+      }
+
+      .notification-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="notification" class="notification"></div>
+
+  <header class="top-header">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    <div class="app-name">Notifications</div>
+    <button class="issue-btn" onclick="toggleIssueForm()"><i class="fas fa-exclamation-circle"></i></button>
+  </header>
+
+  <div class="issue-form-container" id="issue-form-container">
+    <div class="issue-form">
+      <h3>Report an Issue</h3>
+      <form id="issue-form">
+        <input type="email" id="issue-email" placeholder="Your Email" required>
+        <input type="text" id="issue-username" placeholder="Your Username" required>
+        <textarea id="issue-description" placeholder="Describe your issue" required></textarea>
+        <button type="submit">Submit</button>
+        <button type="button" class="close-btn" onclick="toggleIssueForm()">Close</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="account-info" class="account-info"></div>
+    
+    <!-- Notification Controls -->
+    <div class="notification-controls">
+      <div class="search-container">
+        <input type="text" class="search-input" id="search-input" placeholder="Search notifications...">
+        <i class="fas fa-search search-icon"></i>
+      </div>
+      
+      <div class="control-group">
+        <select class="filter-select" id="filter-select">
+          <option value="all">All Notifications</option>
+          <option value="unread">Unread Only</option>
+          <option value="like">Likes</option>
+          <option value="comment">Comments</option>
+          <option value="follow">Follows</option>
+        </select>
+        
+        <button class="control-btn primary" id="mark-all-read" onclick="markAllAsRead()">
+          <i class="fas fa-check-double"></i>
+          Mark All Read
+        </button>
+        
+        <button class="control-btn danger" id="clear-all" onclick="clearAllNotifications()">
+          <i class="fas fa-trash"></i>
+          Clear All
+        </button>
+      </div>
+      
+      <div class="notification-stats">
+        <div class="stat-item">
+          <i class="fas fa-bell"></i>
+          <span id="total-count">0</span> Total
+        </div>
+        <div class="stat-item">
+          <i class="fas fa-envelope"></i>
+          <span id="unread-count">0</span> Unread
+        </div>
+      </div>
+    </div>
+
+    <div id="notification-list" class="notification-list">
+      <div class="loading">Loading notifications...</div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDY3z8akQu1QHHpXw-oFGLNjKUNuzgfsY",
+      authDomain: "ar-hub-e0d3f.firebaseapp.com",
+      databaseURL: "https://ar-hub-e0d3f-default-rtdb.firebaseio.com",
+      projectId: "ar-hub-e0d3f",
+      storageBucket: "ar-hub-e0d3f.firebasestorage.app",
+      messagingSenderId: "325272044889",
+      appId: "1:325272044889:web:56a66926c0e06561ad7848",
+      measurementId: "G-C6YLCC2S8Y"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const analytics = firebase.analytics();
+
+    let currentUser = null;
+    let allNotifications = [];
+    let filteredNotifications = [];
+
+    // Notification system
+    function showNotification(message, type = 'success', duration = 4000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Sanitize input
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML;
+    }
+
+    // Update notification stats
+    function updateNotificationStats() {
+      const totalCount = allNotifications.length;
+      const unreadCount = allNotifications.filter(n => n.unread).length;
+      
+      document.getElementById('total-count').textContent = totalCount;
+      document.getElementById('unread-count').textContent = unreadCount;
+      
+      // Enable/disable buttons based on notification count
+      const markAllBtn = document.getElementById('mark-all-read');
+      const clearAllBtn = document.getElementById('clear-all');
+      
+      markAllBtn.disabled = unreadCount === 0;
+      clearAllBtn.disabled = totalCount === 0;
+    }
+
+    // Search and filter notifications
+    function filterNotifications() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const filterType = document.getElementById('filter-select').value;
+      
+      filteredNotifications = allNotifications.filter(notif => {
+        // Search filter
+        const matchesSearch = searchTerm === '' || 
+          notif.message.toLowerCase().includes(searchTerm);
+        
+        // Type filter
+        const matchesFilter = filterType === 'all' || 
+          (filterType === 'unread' && notif.unread) ||
+          (filterType !== 'unread' && notif.type === filterType);
+        
+        return matchesSearch && matchesFilter;
+      });
+      
+      renderNotifications();
+    }
+
+    // Render notifications
+    function renderNotifications() {
+      const notificationList = document.getElementById('notification-list');
+      
+      if (filteredNotifications.length === 0) {
+        notificationList.innerHTML = '<div class="no-notifications">No notifications found</div>';
+        return;
+      }
+
+      notificationList.innerHTML = '';
+      filteredNotifications.forEach(notif => {
+        const item = document.createElement('div');
+        
+        // Determine notification type and icon
+        let iconClass = '';
+        if (notif.type === 'like') {
+          iconClass = 'like fas fa-heart';
+        } else if (notif.type === 'comment') {
+          iconClass = 'comment fas fa-comment';
+        } else if (notif.type === 'follow') {
+          iconClass = 'follow fas fa-user-plus';
+        } else {
+          iconClass = 'fas fa-bell';
+        }
+
+        item.className = `notification-item ${notif.unread ? 'unread' : ''}`;
+        item.innerHTML = `
+          <i class="notification-icon ${iconClass}"></i>
+          <div style="flex: 1;">
+            <div>${sanitizeInput(notif.message)}</div>
+            <small style="color: var(--text-secondary);">${new Date(notif.timestamp).toLocaleString('en-US')}</small>
+          </div>
+        `;
+        
+        item.onclick = async () => {
+          if (notif.unread) {
+            try {
+              await db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}/${notif.id}`).update({ unread: false });
+              notif.unread = false;
+              item.classList.remove('unread');
+              updateNotificationStats();
+            } catch (error) {
+              showNotification('Error marking notification as read', 'error');
+            }
+          }
+        };
+        
+        notificationList.appendChild(item);
+      });
+    }
+
+    // Mark all notifications as read
+    async function markAllAsRead() {
+      if (!currentUser || allNotifications.length === 0) return;
+      
+      try {
+        const updates = {};
+        const unreadNotifications = allNotifications.filter(n => n.unread);
+        
+        if (unreadNotifications.length === 0) {
+          showNotification('No unread notifications to mark', 'warning');
+          return;
+        }
+        
+        unreadNotifications.forEach(notif => {
+          updates[`notifications/${currentUser.email.replace(/\./g, '_')}/${notif.id}/unread`] = false;
+          notif.unread = false;
+        });
+        
+        await db.ref().update(updates);
+        
+        // Update UI
+        document.querySelectorAll('.notification-item.unread').forEach(item => {
+          item.classList.remove('unread');
+        });
+        
+        updateNotificationStats();
+        showNotification(`Marked ${unreadNotifications.length} notifications as read`, 'success');
+      } catch (error) {
+        showNotification(`Error marking notifications as read: ${error.message}`, 'error');
+      }
+    }
+
+    // Clear all notifications
+    async function clearAllNotifications() {
+      if (!currentUser || allNotifications.length === 0) return;
+      
+      if (!confirm(`Are you sure you want to delete all ${allNotifications.length} notifications? This action cannot be undone.`)) {
+        return;
+      }
+      
+      try {
+        await db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}`).remove();
+        allNotifications = [];
+        filteredNotifications = [];
+        updateNotificationStats();
+        renderNotifications();
+        showNotification('All notifications cleared successfully', 'success');
+      } catch (error) {
+        showNotification(`Error clearing notifications: ${error.message}`, 'error');
+      }
+    }
+
+    // Toggle issue form
+    function toggleIssueForm() {
+      const formContainer = document.getElementById('issue-form-container');
+      formContainer.style.display = formContainer.style.display === 'flex' ? 'none' : 'flex';
+      if (formContainer.style.display === 'flex' && currentUser) {
+        document.getElementById('issue-email').value = currentUser.email;
+      }
+    }
+
+    // Handle issue form submission
+    document.getElementById('issue-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser) {
+        showNotification('Please log in to submit an issue.', 'warning');
+        return;
+      }
+
+      const email = document.getElementById('issue-email').value;
+      const username = document.getElementById('issue-username').value;
+      const description = document.getElementById('issue-description').value;
+
+      try {
+        await db.ref('user_issues').push({
+          email: sanitizeInput(email),
+          username: sanitizeInput(username),
+          description: sanitizeInput(description),
+          timestamp: Date.now(),
+          userId: currentUser.email.replace(/\./g, '_')
+        });
+        showNotification('Issue submitted successfully!', 'success');
+        toggleIssueForm();
+        document.getElementById('issue-form').reset();
+      } catch (error) {
+        showNotification(`Error submitting issue: ${error.message}`, 'error');
+      }
+    });
+
+    // Delete notifications older than 7 days
+    async function deleteOldNotifications() {
+      if (!currentUser) return;
+
+      try {
+        const notifRef = db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}`);
+        const snapshot = await notifRef.once('value');
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+        snapshot.forEach(child => {
+          const notif = child.val();
+          if (notif.timestamp < sevenDaysAgo) {
+            child.ref.remove();
+          }
+        });
+      } catch (error) {
+        console.error('Error deleting old notifications:', error);
+      }
+    }
+
+    // Load account info
+    async function loadAccountInfo() {
+      const accountInfo = document.getElementById('account-info');
+      if (!currentUser) {
+        accountInfo.innerHTML = '<p>Please log in.</p>';
+        return;
+      }
+
+      try {
+        const userRef = db.ref(`users/${currentUser.email.replace(/\./g, '_')}`);
+        const userSnapshot = await userRef.once('value');
+        const userData = userSnapshot.val() || {};
+        const createdDate = userData.createdAt ? new Date(userData.createdAt).toLocaleString('en-US') : 'Unknown';
+
+        // Fetch total likes and comments across all posts
+        const postsSnapshot = await db.ref('posts').once('value');
+        let totalLikes = 0;
+        let totalComments = 0;
+        let commentsList = '';
+
+        postsSnapshot.forEach(child => {
+          const post = child.val();
+          if (post.userId === currentUser.email) {
+            totalLikes += Object.keys(post.likes || {}).length;
+            const comments = post.comments || {};
+            totalComments += Object.keys(comments).length;
+            Object.values(comments).forEach(comment => {
+              commentsList += `<p><strong>${sanitizeInput(comment.displayName || comment.userId)}:</strong> ${sanitizeInput(comment.content)} <small>(${new Date(comment.timestamp).toLocaleString('en-US')})</small></p>`;
+            });
+          }
+        });
+
+        accountInfo.innerHTML = `
+          <h3>Account Information</h3>
+          <p>Account Created: ${createdDate}</p>
+          <p>Total Likes: ${totalLikes}</p>
+          <p>Total Comments: ${totalComments}</p>
+          <h4>Comments:</h4>
+          ${commentsList || '<p>No comments available.</p>'}
+        `;
+      } catch (error) {
+        showNotification(`Error loading account info: ${error.message}`, 'error');
+      }
+    }
+
+    // Load notifications
+    async function loadNotifications() {
+      if (!currentUser) {
+        document.getElementById('notification-list').innerHTML = '<div class="no-notifications">Please log in to view notifications</div>';
+        return;
+      }
+
+      try {
+        // Delete old notifications before loading
+        await deleteOldNotifications();
+
+        const notifRef = db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}`);
+        const snapshot = await notifRef.once('value');
+        
+        allNotifications = [];
+        if (snapshot.exists()) {
+          snapshot.forEach(child => {
+            allNotifications.push({ id: child.key, ...child.val() });
+          });
+          
+          // Sort by timestamp (newest first)
+          allNotifications.sort((a, b) => b.timestamp - a.timestamp);
+        }
+
+        filteredNotifications = [...allNotifications];
+        updateNotificationStats();
+        renderNotifications();
+      } catch (error) {
+        showNotification(`Error loading notifications: ${error.message}`, 'error');
+        document.getElementById('notification-list').innerHTML = '<div class="no-notifications">Error loading notifications</div>';
+      }
+    }
+
+    // Event listeners
+    document.getElementById('search-input').addEventListener('input', filterNotifications);
+    document.getElementById('filter-select').addEventListener('change', filterNotifications);
+
+    // Initialize page
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      loadAccountInfo();
+      loadNotifications();
+      if (!user) {
+        showNotification('Please log in.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+      }
+    });
+  </script>
+</body>
+</html>
