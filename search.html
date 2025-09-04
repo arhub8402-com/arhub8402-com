@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AR Hub - Search Users, Posts and Content">
+  <meta name="keywords" content="AR Hub, search, users, posts, discover">
+  <meta name="author" content="xAI">
+  <title>AR Hub - Search</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK CDN -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics-compat.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --secondary-color: #f8fafc;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #22c55e;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --info-color: #3b82f6;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding-top: 70px;
+      padding-bottom: 70px;
+      color: var(--text-primary);
+      user-select: none;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+
+    .top-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 10px 15px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      animation: slideDown 0.5s ease-out;
+      user-select: none;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .app-name {
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .app-name:hover {
+      background: var(--primary-dark);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .login-link, .profile-pic {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+
+    .login-link:hover, .profile-pic:hover {
+      background: var(--primary-dark);
+    }
+
+    .profile-pic img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-light);
+    }
+
+    .bottom-nav {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 10px 15px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    .bottom-nav nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .bottom-nav nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+      flex: 1;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bottom-nav nav a:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .bottom-nav nav a.active {
+      background: var(--primary-dark);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .bottom-nav nav a i {
+      font-size: 1.2rem;
+    }
+
+    .bottom-nav nav a span {
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 15px;
+      width: 100%;
+    }
+
+    /* Search Header */
+    .search-header {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 85px;
+      z-index: 100;
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 15px 20px 15px 50px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      font-size: 1rem;
+      background: var(--secondary-color);
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+    }
+
+    .clear-search {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      display: none;
+    }
+
+    .clear-search:hover {
+      background: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    /* Search Filters */
+    .search-filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border-color);
+      background: white;
+      color: var(--text-secondary);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .filter-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    /* Search Results */
+    .search-results {
+      min-height: 400px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 0 5px;
+    }
+
+    .results-count {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .sort-options {
+      display: flex;
+      gap: 10px;
+    }
+
+    .sort-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .sort-btn:hover, .sort-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    /* User Results */
+    .user-result {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: all 0.3s ease;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    .user-result:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .user-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 15px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .user-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .follow-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--primary-color);
+      background: white;
+      color: var(--primary-color);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      min-width: 80px;
+    }
+
+    .follow-btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .follow-btn.following {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .message-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      background: white;
+      color: var(--text-secondary);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      min-width: 80px;
+    }
+
+    .message-btn:hover {
+      border-color: var(--info-color);
+      color: var(--info-color);
+    }
+
+    /* Post Results */
+    .post-result {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      animation: slideIn 0.4s ease-out;
+      user-select: none;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .post-result:hover {
+      box-shadow: var(--shadow-lg);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      position: relative;
+      padding-right: 60px;
+      width: 100%;
+    }
+
+    .post-avatar {
+      width: 44px;
+      height: 44px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .post-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    .post-info {
+      flex-grow: 1;
+    }
+
+    .post-author {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 2px;
+    }
+
+    .post-time {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .post-content {
+      margin-bottom: 12px;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .post-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: var(--radius);
+      margin: 10px 0;
+      object-fit: contain;
+      display: block;
+    }
+
+    .post-stats {
+      display: flex;
+      gap: 20px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Trending Section */
+    .trending-section {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .trending-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+    }
+
+    .trending-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .trending-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: var(--radius);
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+    }
+
+    .trending-item:hover {
+      background: var(--secondary-color);
+    }
+
+    .trending-rank {
+      width: 24px;
+      height: 24px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .trending-info {
+      flex: 1;
+    }
+
+    .trending-tag {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .trending-count {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: var(--border-color);
+    }
+
+    .empty-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .empty-text {
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* Loading States */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+      border: 3px solid var(--border-color);
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin-right: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Suggestions */
+    .suggestions {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .suggestions-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--text-primary);
+    }
+
+    .suggestion-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .suggestion-tag {
+      padding: 6px 12px;
+      background: var(--secondary-color);
+      color: var(--text-secondary);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .suggestion-tag:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 80px;
+      right: 15px;
+      width: calc(100% - 30px);
+      max-width: 400px;
+      padding: 12px 15px;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.4s ease;
+      z-index: 1000;
+      user-select: none;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification.success {
+     销
+      background: var(--success-color);
+    }
+
+    .notification.error {
+      background: var(--error-color);
+    }
+
+    .notification.warning {
+      background: var(--warning-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .top-header {
+        padding: 8px 10px;
+      }
+
+      .app-name {
+        font-size: 1rem;
+        max-width: 150px;
+        padding: 6px 10px;
+      }
+
+      .login-link, .profile-pic {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        max-width: 120px;
+      }
+
+      .profile-pic img {
+        width: 32px;
+        height: 32px;
+      }
+
+      .container {
+        padding: 10px;
+      }
+
+      .search-header {
+        top: 78px;
+        padding: 15px;
+      }
+
+      .search-input {
+        padding: 12px 15px 12px 45px;
+        font-size: 0.95rem;
+      }
+
+      .search-filters {
+        gap: 8px;
+      }
+
+      .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      .user-result {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .user-info {
+        width: 100%;
+      }
+
+      .user-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .user-actions button {
+        flex: 1;
+        margin: 0 5px;
+      }
+
+      .post-result {
+        padding: 12px;
+      }
+
+      .trending-section {
+        padding: 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app-name {
+        font-size: 0.9rem;
+        max-width: 120px;
+      }
+
+      .login-link, .profile-pic {
+        font-size: 0.7rem;
+        padding: 5px 8px;
+        max-width: 100px;
+      }
+
+      .profile-pic img {
+        width: 28px;
+        height: 28px;
+      }
+
+      .bottom-nav nav a span {
+        display: none;
+      }
+
+      .bottom-nav nav a i {
+        font-size: 1.1rem;
+      }
+
+      .user-stats {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .post-stats {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="notification" class="notification"></div>
+
+  <header class="top-header">
+    <div class="header-left">
+      <a href="index.html" class="app-name"><i class="fas fa-cube"></i> AR Hub</a>
+    </div>
+    <div class="header-right">
+      <div id="login-section"></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Search Header -->
+    <div class="search-header">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search users, posts, hashtags...">
+        <button class="clear-search" id="clearSearch" onclick="clearSearch()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="search-filters">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">
+          <i class="fas fa-globe"></i> All
+        </button>
+        <button class="filter-btn" data-filter="users" onclick="setFilter('users')">
+          <i class="fas fa-users"></i> Users
+        </button>
+        <button class="filter-btn" data-filter="posts" onclick="setFilter('posts')">
+          <i class="fas fa-images"></i> Posts
+        </button>
+        <button class="filter-btn" data-filter="hashtags" onclick="setFilter('hashtags')">
+          <i class="fas fa-hashtag"></i> Tags
+        </button>
+      </div>
+    </div>
+
+    <!-- Trending Section (shown when no search) -->
+    <div class="trending-section" id="trendingSection">
+      <div class="trending-title">
+        <i class="fas fa-fire"></i> Trending Now
+      </div>
+      <div class="trending-items" id="trendingItems">
+        <!-- Trending items will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Search Suggestions (shown when no search) -->
+    <div class="suggestions" id="suggestionsSection">
+      <div class="suggestions-title">Popular Searches</div>
+      <div class="" id="suggestionTags">
+        <!-- Suggestion tags will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results" id="searchResults" style="display: none;">
+      <div class="results-header">
+        <div class="results-count" id="resultsCount">0 results</div>
+        <div class="sort-options">
+          <button class="sort-btn active" data-sort="recent" onclick="setSorting('recent')">Recent</button>
+          <button class="sort-btn" data-sort="popular" onclick="setSorting('popular')">Popular</button>
+          <button class="sort-btn" data-sort="relevant" onclick="setSorting('relevant')">Relevant</button>
+        </div>
+      </div>
+      
+      <div id="resultsContainer">
+        <!-- Results will be displayed here -->
+      </div>
+    </div>
+  </div>
+
+  <header class="bottom-nav">
+    <nav>
+      <a href="index.html" data-page="home"><i class="fas fa-home"></i> <span>Home</span></a>
+      <a href="search.html" data-page="search" class="active"><i class="fas fa-search"></i> <span>Search</span></a>
+      <a href="profile.html" data-page="profile"><i class="fas fa-user"></i> <span>Profile</span></a>
+      <a href="message.html" data-page="message"><i class="fas fa-envelope"></i> <span>Messages</span></a>
+    </nav>
+  </header>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDY3z8akQu1QHHpXw-oFGLNjKUNuzgfsY",
+      authDomain: "ar-hub-e0d3f.firebaseapp.com",
+      databaseURL: "https://ar-hub-e0d3f-default-rtdb.firebaseio.com",
+      projectId: "ar-hub-e0d3f",
+      storageBucket: "ar-hub-e0d3f.firebasestorage.app",
+      messagingSenderId: "325272044889",
+      appId: "1:325272044889:web:56a66926c0e06561ad7848",
+      measurementId: "G-C6YLCC2S8Y"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const analytics = firebase.analytics();
+
+    let currentUser = null;
+    let followedUsers = {};
+    let searchTimeout = null;
+    let currentFilter = 'all';
+    let currentSort = 'recent';
+    const defaultProfilePic = 'https://via.placeholder.com/44x44.png?text=User';
+
+    // Notification system
+    function showNotification(message, type = 'success', duration = 4000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Sanitize input
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML;
+    }
+
+    // Update login section
+    async function updateLoginSection() {
+      const loginSection = document.getElementById('login-section');
+      if (currentUser) {
+        let profilePic = defaultProfilePic;
+        let displayName = 'User'; // Default display name if none is set
+        try {
+          const userSnapshot = await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).once('value');
+          const userData = userSnapshot.val() || {};
+          if (userData.profilePic) {
+            profilePic = userData.profilePic;
+          }
+          if (userData.displayName) {
+            displayName = userData.displayName;
+          }
+          loginSection.innerHTML = `
+            <a href="profile.html" class="profile-pic">
+              <img src="${profilePic}" alt="Profile">
+              <span>${sanitizeInput(displayName)}</span>
+            </a>
+            <button onclick="signOut()" class="login-link">Sign Out</button>
+          `;
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          showNotification('Failed to load user profile', 'error');
+        }
+      } else {
+        loginSection.innerHTML = `<a href="login.html" class="login-link"><i class="fas fa-sign-in-alt"></i> Sign In</a>`;
+      }
+    }
+
+    // Sign out
+    async function signOut() {
+      try {
+        await auth.signOut();
+        showNotification('Signed out successfully', 'success');
+        updateLoginSection();
+      } catch (error) {
+        console.error('Sign out error:', error);
+        showNotification('Failed to sign out', 'error');
+      }
+    }
+
+    // Clear search input
+    function clearSearch() {
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = '';
+      document.getElementById('clearSearch').style.display = 'none';
+      document.getElementById('searchResults').style.display = 'none';
+      document.getElementById('trendingSection').style.display = 'block';
+      document.getElementById('suggestionsSection').style.display = 'block';
+      loadTrending();
+      loadSuggestions();
+    }
+
+    // Set search filter
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
+      performSearch();
+    }
+
+    // Set sorting option
+    function setSorting(sort) {
+      currentSort = sort;
+      document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sort === sort);
+      });
+      performSearch();
+    }
+
+    // Load trending items
+    async function loadTrending() {
+      const trendingItems = document.getElementById('trendingItems');
+      trendingItems.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+      try {
+        const snapshot = await db.ref('hashtags').orderByChild('count').limitToLast(5).once('value');
+        const data = snapshot.val() || {};
+        const items = Object.entries(data).sort((a, b) => b[1].count - a[1].count);
+        trendingItems.innerHTML = items.length ? '' : '<div class="empty-state"><i class="fas fa-fire empty-icon"></i><div class="empty-title">No Trending Tags</div><div class="empty-text">No trending hashtags at the moment.</div></div>';
+        items.forEach(([tag, info], index) => {
+          trendingItems.innerHTML += `
+            <div class="trending-item" onclick="searchTag('${tag}')">
+              <div class="trending-rank">${index + 1}</div>
+              <div class="trending-info">
+                <div class="trending-tag">#${sanitizeInput(tag)}</div>
+                <div class="trending-count">${info.count} posts</div>
+              </div>
+            </div>
+          `;
+        });
+      } catch (error) {
+        console.error('Error loading trending:', error);
+        trendingItems.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle empty-icon"></i><div class="empty-title">Error</div><div class="empty-text">Failed to load trending hashtags.</div></div>';
+      }
+    }
+
+    // Load search suggestions
+    async function loadSuggestions() {
+      const suggestionTags = document.getElementById('suggestionTags');
+      try {
+        const snapshot = await db.ref('hashtags').orderByChild('count').limitToLast(10).once('value');
+        const data = snapshot.val() || {};
+        const tags = Object.keys(data).sort((a, b) => data[b].count - data[a].count);
+        suggestionTags.innerHTML = tags.length ? '' : '<div class="empty-state"><i class="fas fa-tag empty-icon"></i><div class="empty-title">No Suggestions</div><div class="empty-text">No popular tags available.</div></div>';
+        tags.forEach(tag => {
+          suggestionTags.innerHTML += `<span class="suggestion-tag" onclick="searchTag('${tag}')">#${sanitizeInput(tag)}</span>`;
+        });
+      } catch (error) {
+        console.error('Error loading suggestions:', error);
+        suggestionTags.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle empty-icon"></i><div class="empty-title">Error</div><div class="empty-text">Failed to load suggestions.</div></div>';
+      }
+    }
+
+    // Search by tag
+    function searchTag(tag) {
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = `#${tag}`;
+      document.getElementById('clearSearch').style.display = 'block';
+      performSearch();
+    }
+
+    // Perform search
+    async function performSearch() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const resultsContainer = document.getElementById('resultsContainer');
+      const resultsCount = document.getElementById('resultsCount');
+      const searchResults = document.getElementById('searchResults');
+      const trendingSection = document.getElementById('trendingSection');
+      const suggestionsSection = document.getElementById('suggestionsSection');
+
+      if (!query) {
+        searchResults.style.display = 'none';
+        trendingSection.style.display = 'block';
+        suggestionsSection.style.display = 'block';
+        loadTrending();
+        loadSuggestions();
+        return;
+      }
+
+      searchResults.style.display = 'block';
+      trendingSection.style.display = 'none';
+      suggestionsSection.style.display = 'none';
+      resultsContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+
+      try {
+        let results = [];
+        if (currentFilter === 'all' || currentFilter === 'users') {
+          const userSnapshot = await db.ref('users').once('value');
+          const users = userSnapshot.val() || {};
+          results.push(...Object.entries(users).map(([key, user]) => ({
+            type: 'user',
+            id: key,
+            ...user,
+            relevance: (user.displayName?.toLowerCase().includes(query)) ? 1 : 0
+          })).filter(user => user.relevance > 0));
+        }
+
+        if (currentFilter === 'all' || currentFilter === 'posts') {
+          const postSnapshot = await db.ref('posts').once('value');
+          const posts = postSnapshot.val() || {};
+          results.push(...Object.entries(posts).map(([key, post]) => ({
+            type: 'post',
+            id: key,
+            ...post,
+            relevance: (post.content?.toLowerCase().includes(query) || post.hashtags?.some(tag => tag.toLowerCase().includes(query))) ? 1 : 0
+          })).filter(post => post.relevance > 0));
+        }
+
+        if (currentFilter === 'all' || currentFilter === 'hashtags') {
+          const hashtagSnapshot = await db.ref('hashtags').once('value');
+          const hashtags = hashtagSnapshot.val() || {};
+          results.push(...Object.entries(hashtags).map(([tag, info]) => ({
+            type: 'hashtag',
+            id: tag,
+            ...info,
+            relevance: tag.toLowerCase().includes(query.replace('#', _
+
+)) ? 1 : 0
+          })).filter(hashtag => hashtag.relevance > 0));
+        }
+
+        // Sort results
+        if (currentSort === 'recent') {
+          results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        } else if (currentSort === 'popular') {
+          results.sort((a, b) => (b.likes?.length || b.count || 0) - (a.likes?.length || a.count || 0));
+        } else if (currentSort === 'relevant') {
+          results.sort((a, b) => b.relevance - a.relevance);
+        }
+
+        resultsCount.textContent = `${results.length} results`;
+        resultsContainer.innerHTML = results.length ? '' : '<div class="empty-state"><i class="fas fa-search empty-icon"></i><div class="empty-title">No Results</div><div class="empty-text">Try a different search term or filter.</div></div>';
+
+        results.forEach(item => {
+          if (item.type === 'user') {
+            resultsContainer.innerHTML += `
+              <div class="user-result">
+                <div class="user-avatar" style="background-image: url('${item.profilePic || defaultProfilePic}')" onclick="window.location.href='profile.html?user=${item.id}'">
+                  ${!item.profilePic ? item.displayName?.charAt(0).toUpperCase() || 'U' : ''}
+                </div>
+                <div class="user-info">
+                  <div class="user-name">${sanitizeInput(item.displayName || 'User')}</div>
+                  <div class="user-stats">
+                    <span>${item.followers?.length || 0} Followers</span>
+                    <span>${item.following?.length || 0} Following</span>
+                  </div>
+                </div>
+                <div class="user-actions">
+                  <button class="follow-btn ${followedUsers[item.id] ? 'following' : ''}" onclick="toggleFollow('${item.id}')">
+                    ${followedUsers[item.id] ? 'Following' : 'Follow'}
+                  </button>
+                  <button class="message-btn" onclick="startMessage('${item.id}')">Message</button>
+                </div>
+              </div>
+            `;
+          } else if (item.type === 'post') {
+            resultsContainer.innerHTML += `
+              <div class="post-result">
+                <div class="post-header">
+                  <div class="post-avatar" style="background-image: url('${item.authorPic || defaultProfilePic}')" onclick="window.location.href='profile.html?user=${item.author}'">
+                    ${!item.authorPic ? item.authorName?.charAt(0).toUpperCase() || 'U' : ''}
+                  </div>
+                  <div class="post-info">
+                    <div class="post-author">${sanitizeInput(item.authorName || 'User')}</div>
+                    <div class="post-time">${new Date(item.timestamp).toLocaleString()}</div>
+                  </div>
+                </div>
+                <div class="post-content">${sanitizeInput(item.content)}</div>
+                ${item.image ? `<img src="${item.image}" alt="Post Image" class="post-image">` : ''}
+                <div class="post-stats">
+                  <span>${item.likes?.length || 0} Likes</span>
+                  <span>${item.comments?.length || 0} Comments</span>
+                </div>
+              </div>
+            `;
+          } else if (item.type === 'hashtag') {
+            resultsContainer.innerHTML += `
+              <div class="trending-item" onclick="searchTag('${item.id}')">
+                <div class="trending-rank">?</div>
+                <div class="trending-info">
+                  <div class="trending-tag">#${sanitizeInput(item.id)}</div>
+                  <div class="trending-count">${item.count} posts</div>
+                </div>
+              </div>
+            `;
+          }
+        });
+      } catch (error) {
+        console.error('Search error:', error);
+        resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle empty-icon"></i><div class="empty-title">Error</div><div class="empty-text">Failed to load search results.</div></div>';
+      }
+    }
+
+    // Toggle follow user
+    async function toggleFollow(userId) {
+      if (!currentUser) {
+        showNotification('Please sign in to follow users', 'warning');
+        return;
+      }
+      try {
+        const userRef = db.ref(`users/${currentUser.email.replace(/\./g, '_')}/following`);
+        if (followedUsers[userId]) {
+          await userRef.child(userId).remove();
+          followedUsers[userId] = false;
+          showNotification('Unfollowed user', 'success');
+        } else {
+          await userRef.child(userId).set(true);
+          followedUsers[userId] = true;
+          showNotification('Followed user', 'success');
+        }
+        performSearch();
+      } catch (error) {
+        console.error('Follow error:', error);
+        showNotification('Failed to update follow status', 'error');
+      }
+    }
+
+    // Start message
+    function startMessage(userId) {
+      if (!currentUser) {
+        showNotification('Please sign in to send messages', 'warning');
+        return;
+      }
+      window.location.href = `message.html?user=${userId}`;
+    }
+
+    // Initialize page
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      updateLoginSection();
+      if (user) {
+        db.ref(`users/${user.email.replace(/\./g, '_')}/following`).once('value').then(snapshot => {
+          followedUsers = snapshot.val() || {};
+          performSearch();
+        });
+      } else {
+        followedUsers = {};
+        performSearch();
+      }
+    });
+
+    // Search input event listener
+    document.getElementById('searchInput').addEventListener('input', () => {
+      const query = document.getElementById('searchInput').value.trim();
+      document.getElementById('clearSearch').style.display = query ? 'block' : 'none';
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(performSearch, 500);
+    });
+
+    // Initial load
+    loadTrending();
+    loadSuggestions();
+  </script>
+</body>
+</html>
