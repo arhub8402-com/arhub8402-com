@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AR Hub - Your Profile Page">
+  <meta name="keywords" content="AR Hub, profile, augmented reality, social platform">
+  <meta name="author" content="xAI">
+  <title>AR Hub - Profile</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK CDN -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics-compat.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --secondary-color: #f8fafc; /* Light theme background */
+      --text-primary: #1e293b; /* Light theme text */
+      --text-secondary: #64748b; /* Light theme secondary text */
+      --border-color: #e2e8f0; /* Light theme border */
+      --success-color: #22c55e;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      overflow-x: hidden;
+      color: var(--text-primary); /* Enforce light theme text color */
+      user-select: none; /* Prevent text selection by default */
+    }
+
+    .top-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 10px 15px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      animation: slideDown 0.5s ease-out;
+      user-select: none; /* Prevent copying header content */
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .app-name {
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .app-name:hover {
+      background: var(--primary-dark);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .settings-icon {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .settings-icon:hover {
+      background: var(--primary-dark);
+    }
+
+    .bottom-nav {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 10px 15px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none; /* Prevent copying nav content */
+    }
+
+    .bottom-nav nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .bottom-nav nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+      flex: 1;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bottom-nav nav a:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .bottom-nav nav a.active {
+      background: var(--primary-dark);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .bottom-nav nav a i {
+      font-size: 1.2rem;
+    }
+
+    .bottom-nav nav a span {
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .container {
+      width: 100%;
+      margin: 0;
+      padding: 15px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .profile-box {
+      background: white; /* Enforce light theme background */
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      width: 100%;
+      animation: fadeIn 0.5s ease-in-out;
+      user-select: none; /* Prevent copying profile content */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .cover-photo {
+      height: 180px;
+      background: var(--border-color);
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      width: 100%;
+      object-fit: cover;
+      overflow: hidden;
+    }
+
+    .cover-photo-icon {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: var(--primary-color);
+      color: white;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      z-index: 1002;
+    }
+
+    .cover-photo-icon:hover {
+      background: var(--primary-dark);
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      margin-top: -40px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+    }
+
+    .profile-pic {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      border: 3px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: var(--shadow-md);
+      background-size: cover;
+      background-position: center;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .profile-pic:hover {
+      transform: scale(1.05);
+    }
+
+    .profile-info {
+      margin-left: 15px;
+      flex: 1;
+      user-select: none; /* Prevent copying profile info */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .profile-info h2 {
+      font-size: 1.4rem;
+      margin-bottom: 5px;
+      color: var(--text-primary);
+    }
+
+    .profile-info p {
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .profile-info button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .profile-info button:hover {
+      background: var(--primary-dark);
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      text-align: center;
+      padding: 12px;
+      background: var(--secondary-color);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      width: 100%;
+      user-select: none; /* Prevent copying stats */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .stat-item {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .post-box, .post {
+      background: white; /* Enforce light theme background */
+      border-radius: 0;
+      padding: 15px;
+      margin: 20px 0;
+      box-shadow: var(--shadow-md);
+      width: 100%;
+      animation: fadeIn 0.5s ease-in-out;
+      user-select: none; /* Prevent copying posts */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .post-box h3 {
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    textarea, input, select {
+      width: 100%;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 0.95rem;
+      transition: border-color 0.3s ease;
+      background: white; /* Enforce light theme input background */
+      color: var(--text-primary); /* Enforce light theme text */
+      user-select: text; /* Allow copying in input fields */
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    .post-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-btn {
+      background: var(--text-secondary);
+    }
+
+    .secondary-btn:hover {
+      background: #475569;
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      position: relative;
+      padding-right: 60px;
+      width: 100%;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    .user-avatar.loading {
+      background: var(--border-color);
+    }
+
+    .user-avatar.loading::after {
+      content: '';
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary-color);
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+    }
+
+    .post-time {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .privacy-indicator {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: var(--secondary-color);
+      padding: 4px 8px;
+      border-radius: 12px;
+      position: absolute;
+      right: 50px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .three-dots {
+      cursor: pointer;
+      font-size: 1rem;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--secondary-color);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      transition: background-color 0.3s ease;
+    }
+
+    .three-dots:hover {
+      background: var(--border-color);
+    }
+
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      right: 10px;
+      top: 45px;
+      background: white; /* Enforce light theme background */
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      z-index: 10;
+      min-width: 140px;
+      user-select: none; /* Prevent copying menu */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .menu-dropdown button {
+      display: block;
+      width: 100%;
+      padding: 10px 15px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: background-color 0.3s ease;
+    }
+
+    .menu-dropdown button:hover {
+      background: var(--secondary-color);
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border-color);
+      padding-top: 10px;
+      width: 100%;
+    }
+
+    .post-actions button {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+    }
+
+    .like-btn {
+      color: var(--error-color);
+    }
+
+    .like-btn.liked {
+      background: var(--error-color);
+      color: white;
+    }
+
+    .like-btn:hover, .comment-btn:hover {
+      background: var(--secondary-color);
+    }
+
+    .comment-section {
+      display: none;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .comment {
+      background: var(--secondary-color); /* Enforce light theme background */
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      width: 100%;
+      user-select: none; /* Prevent copying comments */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .comment-input {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .comment-input input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      transition: border-color 0.3s ease;
+      background: white; /* Enforce light theme input background */
+      color: var(--text-primary); /* Enforce light theme text */
+      user-select: text; /* Allow copying in input fields */
+    }
+
+    .comment-input input:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    .comment-input button {
+      padding: 10px 15px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .comment-input button:hover {
+      background: var(--primary-dark);
+    }
+
+    .edit-photo-form {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white; /* Enforce light theme background */
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      z-index: 2000;
+      width: 90%;
+      max-width: 400px;
+      opacity: 1;
+      user-select: none; /* Prevent copying form content */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .edit-photo-form.show {
+      display: block;
+    }
+
+    .notification {
+      position: fixed;
+      top: 80px;
+      right: 15px;
+      width: calc(100% - 30px);
+      max-width: 400px;
+      padding: 12px 15px;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.4s ease;
+      z-index: 1000;
+      user-select: none; /* Prevent copying notifications */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success-color);
+    }
+
+    .notification.error {
+      background: var(--error-color);
+    }
+
+    .notification.warning {
+      background: var(--warning-color);
+    }
+
+    .post img {
+      max-width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: var(--radius);
+      display: block;
+      margin: 10px 0;
+      user-select: none; /* Prevent image selection */
+    }
+
+    .image-placeholder {
+      width: 100%;
+      height: 100%;
+      background: var(--border-color); /* Enforce light theme placeholder */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-align: center;
+      border-radius: var(--radius);
+      user-select: none; /* Prevent copying placeholder text */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .image-loading {
+      width: 100%;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--border-color); /* Enforce light theme loading */
+      border-radius: var(--radius);
+      user-select: none; /* Prevent copying loading indicator */
+      oncontextmenu: return false; /* Disable context menu */
+    }
+
+    .image-loading::after {
+      content: '';
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Allow copying for user-edited content */
+    [data-editable="true"] {
+      user-select: text !important;
+      oncontextmenu: return true; /* Enable context menu for edited content */
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+      .top-header {
+        padding: 8px 10px;
+      }
+      .app-name {
+        font-size: 1rem;
+        max-width: 150px;
+        padding: 6px 10px;
+      }
+      .settings-icon {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+      }
+      .bottom-nav nav {
+        gap: 5px;
+      }
+      .bottom-nav nav a {
+        font-size: 0.8rem;
+        padding: 6px;
+      }
+      .profile-section {
+        flex-direction: column;
+        text-align: center;
+      }
+      .profile-info {
+        margin-left: 0;
+        margin-top: 10px;
+      }
+      .stats {
+        flex-direction: row;
+      }
+      .container {
+        padding: 10px 0;
+      }
+      .cover-photo {
+        height: 150px;
+      }
+      .post img {
+        max-height: 300px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app-name {
+        font-size: 0.9rem;
+        max-width: 120px;
+      }
+      .settings-icon {
+        font-size: 0.7rem;
+        padding: 5px 8px;
+      }
+      .bottom-nav nav a {
+        font-size: 0.7rem;
+        padding: 5px;
+      }
+      .bottom-nav nav a span {
+        display: none;
+      }
+      .bottom-nav nav a i {
+        font-size: 1.1rem;
+      }
+      .container {
+        padding: 5px 0;
+      }
+      .cover-photo {
+        height: 120px;
+      }
+      .profile-pic {
+        width: 70px;
+        height: 70px;
+        font-size: 1.5rem;
+      }
+      .post img {
+        max-height: 250px;
+      }
+    }
+
+    /* Dark mode is intentionally disabled to maintain light theme consistently */
+  </style>
+</head>
+<body>
+  <div id="notification" class="notification"></div>
+
+  <header class="top-header">
+    <div class="header-left">
+      <a href="index.html" class="app-name"><i class="fas fa-cube"></i> AR Hub</a>
+    </div>
+    <div class="header-right">
+      <a href="settings.html" class="settings-icon"><i class="fas fa-cog"></i> <span></span></a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="profile-box">
+      <div class="cover-photo" id="coverPhoto">
+        <div class="cover-photo-icon" onclick="showCoverPhotoForm()"><i class="fas fa-camera"></i></div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-pic" id="profilePic" onclick="showProfilePicForm()"></div>
+        <div class="profile-info">
+          <h2 id="profileName">Your Name</h2>
+          <p id="profileBio">Welcome to my AR Social profile! 🚀</p>
+          <button onclick="editProfile()">Edit Profile</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-item"><div class="stat-number" id="postCount">0</div><div class="stat-label">Posts</div></div>
+        <div class="stat-item"><div class="stat-number" id="followersCount">0</div><div class="stat-label">Followers</div></div>
+        <div class="stat-item"><div class="stat-number" id="followingCount">0</div><div class="stat-label">Following</div></div>
+      </div>
+      <div class="post-box">
+        <h3>Create a Post</h3>
+        <textarea id="postText" placeholder="What's happening?"></textarea>
+        <input type="text" id="imgUrl" placeholder="Image URL (e.g., https://example.com/image.jpg)">
+        <div class="post-options">
+          <select id="postPrivacy">
+            <option value="public">🌍 Public</option>
+            <option value="private">🔒 Only Me</option>
+          </select>
+          <button onclick="createPost()">Post</button>
+          <button class="secondary-btn" onclick="clearPost()">Clear</button>
+        </div>
+      </div>
+      <div id="feed"></div>
+    </div>
+  </div>
+
+  <div id="editProfileForm" class="edit-photo-form">
+    <h3>Edit Profile</h3>
+    <input type="text" id="editName" placeholder="Your Name">
+    <textarea id="editBio" placeholder="Bio"></textarea>
+    <button onclick="saveProfile()">Save</button>
+    <button class="secondary-btn" onclick="cancelEdit()">Cancel</button>
+  </div>
+
+  <div id="editProfilePicForm" class="edit-photo-form">
+    <h3>Edit Profile Picture</h3>
+    <input type="text" id="editProfilePicUrl" placeholder="Profile Picture URL (e.g., https://example.com/image.jpg)">
+    <button onclick="saveProfilePic()">Save</button>
+    <button class="secondary-btn" onclick="cancelPhotoEdit('editProfilePicForm')">Cancel</button>
+  </div>
+
+  <div id="editCoverPhotoForm" class="edit-photo-form">
+    <h3>Edit Cover Photo</h3>
+    <input type="text" id="editCoverPhotoUrl" placeholder="Cover Photo URL (e.g., https://example.com/image.jpg)">
+    <button onclick="saveCoverPhoto()">Save</button>
+    <button class="secondary-btn" onclick="cancelPhotoEdit('editCoverPhotoForm')">Cancel</button>
+  </div>
+
+  <header class="bottom-nav">
+    <nav>
+      <a href="index.html" data-page="home"><i class="fas fa-home"></i> <span>Home</span></a>
+      <a href="search.html" data-page="search"><i class="fas fa-search"></i> <span>Search</span></a>
+      <a href="profile.html" data-page="profile" class="active"><i class="fas fa-user"></i> <span>Profile</span></a>
+      <a href="message.html" data-page="message"><i class="fas fa-envelope"></i> <span>Messages</span></a>
+    </nav>
+  </header>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDY3z8akQu1QHHpXw-oFGLNjKUNuzgfsY",
+      authDomain: "ar-hub-e0d3f.firebaseapp.com",
+      databaseURL: "https://ar-hub-e0d3f-default-rtdb.firebaseio.com",
+      projectId: "ar-hub-e0d3f",
+      storageBucket: "ar-hub-e0d3f.firebasestorage.app",
+      messagingSenderId: "325272044889",
+      appId: "1:325272044889:web:56a66926c0e06561ad7848",
+      measurementId: "G-C6YLCC2S8Y"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const analytics = firebase.analytics();
+
+    let currentUser = null;
+    let commentAttempts = 0;
+    const maxCommentAttempts = 5;
+    let lastCommentAttempt = 0;
+    const imageCache = new Map();
+
+    // Default placeholder images
+    const defaultProfilePic = 'https://via.placeholder.com/90x90.png?text=Profile';
+    const defaultCoverPhoto = 'https://via.placeholder.com/1200x180.png?text=Cover';
+
+    // Notification system
+    function showNotification(message, type = 'success', duration = 4000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Sanitize input to prevent XSS
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML;
+    }
+
+    // Handle image errors
+    function handleImageError(img, type = 'post') {
+      img.classList.add('image-placeholder');
+      if (type === 'profile' || type === 'avatar') {
+        img.style.backgroundImage = `url(${defaultProfilePic})`;
+        img.textContent = '';
+      } else if (type === 'cover') {
+        img.style.backgroundImage = `url(${defaultCoverPhoto})`;
+      } else {
+        img.src = 'https://via.placeholder.com/400x400.png?text=Image+Failed';
+        img.alt = 'Image failed to load';
+      }
+      showNotification('Failed to load image. Showing a placeholder.', 'error');
+    }
+
+    // Validate URL
+    function isValidUrl(url) {
+      try {
+        new URL(url);
+        return url.match(/\.(jpeg|jpg|png|gif|webp)$/i) !== null;
+      } catch {
+        return false;
+      }
+    }
+
+    // Preload image to verify URL
+    async function preloadImage(url) {
+      if (imageCache.has(url)) {
+        return imageCache.get(url);
+      }
+      try {
+        const img = new Image();
+        img.src = url;
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            if (img.width > 0 && img.height > 0) {
+              if (img.width > 4096 || img.height > 4096) {
+                reject(new Error('Image dimensions too large. Keep within 4096x4096 pixels.'));
+              } else {
+                imageCache.set(url, true);
+                resolve(true);
+              }
+            } else {
+              reject(new Error('Image could not be loaded.'));
+            }
+          };
+          img.onerror = () => reject(new Error('Image could not be loaded. Check the URL.'));
+        });
+        return true;
+      } catch (error) {
+        showNotification(error.message, 'error');
+        return false;
+      }
+    }
+
+    // Load profile
+    async function loadProfile() {
+      if (!currentUser) return;
+
+      const userRef = db.ref(`users/${currentUser.email.replace(/\./g, '_')}`);
+      try {
+        const snapshot = await userRef.once('value');
+        const userData = snapshot.val() || {};
+        const profileName = document.getElementById('profileName');
+        const profileBio = document.getElementById('profileBio');
+        profileName.textContent = sanitizeInput(userData.displayName || currentUser.email);
+        profileBio.textContent = sanitizeInput(userData.bio || 'Welcome to my AR Social profile! 🚀');
+        const profilePic = document.getElementById('profilePic');
+        const coverPhoto = document.getElementById('coverPhoto');
+
+        // Load profile picture
+        if (userData.profilePic) {
+          profilePic.classList.add('image-loading');
+          if (await preloadImage(userData.profilePic)) {
+            profilePic.style.backgroundImage = `url(${userData.profilePic})`;
+            profilePic.textContent = '';
+          } else {
+            profilePic.style.backgroundImage = `url(${defaultProfilePic})`;
+            profilePic.textContent = '';
+            showNotification('Failed to load profile picture. Using placeholder.', 'error');
+          }
+          profilePic.classList.remove('image-loading');
+        } else {
+          profilePic.style.backgroundImage = `url(${defaultProfilePic})`;
+          profilePic.textContent = '';
+        }
+
+        // Load cover photo
+        if (userData.coverPhoto) {
+          coverPhoto.classList.add('image-loading');
+          if (await preloadImage(userData.coverPhoto)) {
+            coverPhoto.style.backgroundImage = `url(${userData.coverPhoto})`;
+          } else {
+            coverPhoto.style.backgroundImage = `url(${defaultCoverPhoto})`;
+            showNotification('Failed to load cover photo. Using placeholder.', 'error');
+          }
+          coverPhoto.classList.remove('image-loading');
+        } else {
+          coverPhoto.style.backgroundImage = `url(${defaultCoverPhoto})`;
+        }
+
+        // Load stats
+        const postsSnapshot = await db.ref('posts').orderByChild('userId').equalTo(currentUser.email).once('value');
+        document.getElementById('postCount').textContent = postsSnapshot.numChildren();
+
+        const followersSnapshot = await db.ref('users').orderByChild(`following/${currentUser.email.replace(/\./g, '_')}`).equalTo(true).once('value');
+        document.getElementById('followersCount').textContent = followersSnapshot.numChildren();
+
+        const followingSnapshot = await userRef.child('following').once('value');
+        document.getElementById('followingCount').textContent = followingSnapshot.numChildren();
+
+        // Allow copying if user edited profile
+        if (userData.edited) {
+          profileName.dataset.editable = 'true';
+          profileBio.dataset.editable = 'true';
+        }
+      } catch (error) {
+        showNotification('Error loading profile.', 'error');
+        analytics.logEvent('profile_load_error', { error: error.message });
+      }
+    }
+
+    // Edit profile form
+    function editProfile() {
+      if (!currentUser) {
+        showNotification('Please log in to edit your profile.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      const editForm = document.getElementById('editProfileForm');
+      document.getElementById('editName').value = document.getElementById('profileName').textContent;
+      document.getElementById('editBio').value = document.getElementById('profileBio').textContent;
+      editForm.style.display = 'block';
+      editForm.classList.add('show');
+    }
+
+    // Save profile
+    async function saveProfile() {
+      if (!currentUser) return;
+      const name = sanitizeInput(document.getElementById('editName').value.trim());
+      const bio = sanitizeInput(document.getElementById('editBio').value.trim());
+      if (!name) {
+        showNotification('Please enter a name.', 'error');
+        return;
+      }
+      try {
+        await auth.currentUser.updateProfile({ displayName: name });
+        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+          displayName: name,
+          bio: bio || 'Welcome to my AR Social profile! 🚀',
+          edited: true // Mark as edited
+        });
+        const profileName = document.getElementById('profileName');
+        const profileBio = document.getElementById('profileBio');
+        profileName.textContent = name;
+        profileBio.textContent = bio || 'Welcome to my AR Social profile! 🚀';
+        profileName.dataset.editable = 'true'; // Allow copying
+        profileBio.dataset.editable = 'true'; // Allow copying
+        showNotification('Profile updated successfully!', 'success');
+        analytics.logEvent('profile_update');
+        cancelEdit();
+      } catch (error) {
+        showNotification('Error updating profile: ' + error.message, 'error');
+        analytics.logEvent('profile_update_error', { error: error.message });
+      }
+    }
+
+    function cancelEdit() {
+      const editForm = document.getElementById('editProfileForm');
+      editForm.style.display = 'none';
+      editForm.classList.remove('show');
+    }
+
+    // Show profile picture form
+    function showProfilePicForm() {
+      if (!currentUser) {
+        showNotification('Please log in to edit your profile picture.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      const profilePicForm = document.getElementById('editProfilePicForm');
+      profilePicForm.style.display = 'block';
+      profilePicForm.classList.add('show');
+    }
+
+    // Show cover photo form
+    function showCoverPhotoForm() {
+      if (!currentUser) {
+        showNotification('Please log in to edit your cover photo.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      const coverPhotoForm = document.getElementById('editCoverPhotoForm');
+      coverPhotoForm.style.display = 'block';
+      coverPhotoForm.classList.add('show');
+    }
+
+    // Save profile picture
+    async function saveProfilePic() {
+      if (!currentUser) return;
+      const url = document.getElementById('editProfilePicUrl').value.trim();
+      if (!url) {
+        showNotification('Please provide an image URL.', 'error');
+        return;
+      }
+      if (!isValidUrl(url)) {
+        showNotification('Please provide a valid image URL (jpg, png, gif, webp).', 'error');
+        return;
+      }
+      try {
+        const isValid = await preloadImage(url);
+        if (!isValid) return;
+        await auth.currentUser.updateProfile({ photoURL: url });
+        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({ profilePic: url });
+        const profilePic = document.getElementById('profilePic');
+        profilePic.classList.add('image-loading');
+        profilePic.style.backgroundImage = `url(${url})`;
+        profilePic.textContent = '';
+        profilePic.classList.remove('image-loading');
+        showNotification('Profile picture updated successfully!', 'success');
+        analytics.logEvent('profile_pic_update');
+        cancelPhotoEdit('editProfilePicForm');
+      } catch (error) {
+        showNotification('Error updating profile picture: ' + error.message, 'error');
+        analytics.logEvent('profile_pic_update_error', { error: error.message });
+      }
+    }
+
+    // Save cover photo
+    async function saveCoverPhoto() {
+      if (!currentUser) return;
+      const url = document.getElementById('editCoverPhotoUrl').value.trim();
+      if (!url) {
+        showNotification('Please provide an image URL.', 'error');
+        return;
+      }
+      if (!isValidUrl(url)) {
+        showNotification('Please provide a valid image URL (jpg, png, gif, webp).', 'error');
+        return;
+      }
+      try {
+        const isValid = await preloadImage(url);
+        if (!isValid) return;
+        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({ coverPhoto: url });
+        const coverPhoto = document.getElementById('coverPhoto');
+        coverPhoto.classList.add('image-loading');
+        coverPhoto.style.backgroundImage = `url(${url})`;
+        coverPhoto.classList.remove('image-loading');
+        showNotification('Cover photo updated successfully!', 'success');
+        analytics.logEvent('cover_photo_update');
+        cancelPhotoEdit('editCoverPhotoForm');
+      } catch (error) {
+        showNotification('Error updating cover photo: ' + error.message, 'error');
+        analytics.logEvent('cover_photo_update_error', { error: error.message });
+      }
+    }
+
+    function cancelPhotoEdit(id) {
+      const form = document.getElementById(id);
+      form.style.display = 'none';
+      form.classList.remove('show');
+    }
+
+    // Create post
+    async function createPost() {
+      if (!currentUser) {
+        showNotification('Please log in to create a post.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      const text = sanitizeInput(document.getElementById('postText').value.trim());
+      const imageUrl = document.getElementById('imgUrl').value.trim();
+      const privacy = document.getElementById('postPrivacy').value;
+
+      if (!text && !imageUrl) {
+        showNotification('Please write something or provide an image URL.', 'error');
+        return;
+      }
+
+      let validatedImageUrl = '';
+      if (imageUrl) {
+        if (!isValidUrl(imageUrl)) {
+          showNotification('Please provide a valid image URL (jpg, png, gif, webp).', 'error');
+          return;
+        }
+        const isValid = await preloadImage(imageUrl);
+        if (!isValid) return;
+        validatedImageUrl = imageUrl;
+      }
+
+      try {
+        const postRef = db.ref('posts').push();
+        await postRef.set({
+          userId: currentUser.email,
+          displayName: currentUser.displayName || currentUser.email,
+          content: text,
+          image: validatedImageUrl,
+          privacy,
+          timestamp: Date.now(),
+          edited: false
+        });
+        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+          postCount: firebase.database.ServerValue.increment(1)
+        });
+        clearPost();
+        loadPosts();
+        showNotification('Post created successfully!', 'success');
+        analytics.logEvent('post_create');
+      } catch (error) {
+        showNotification('Error creating post: ' + error.message, 'error');
+        analytics.logEvent('post_create_error', { error: error.message });
+      }
+    }
+
+    function clearPost() {
+      document.getElementById('postText').value = '';
+      document.getElementById('imgUrl').value = '';
+      document.getElementById('postPrivacy').value = 'public';
+    }
+
+    // Load posts
+    async function loadPosts() {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '<div class="image-loading" style="width: 100%; height: 100px;"></div>';
+
+      try {
+        const snapshot = await db.ref('posts').once('value');
+        feed.innerHTML = '';
+        if (!snapshot.exists()) {
+          feed.innerHTML = '<div style="text-align: center; color: var(--text-secondary); width: 100%;">No posts available</div>';
+          return;
+        }
+
+        const posts = [];
+        snapshot.forEach(child => {
+          const post = child.val();
+          const isOwner = currentUser && post.userId === currentUser.email;
+          const isPublic = post.privacy === 'public';
+          const isPrivate = post.privacy === 'private' && isOwner;
+
+          if (isOwner || isPublic) {
+            posts.push({ id: child.key, ...post });
+          }
+        });
+
+        posts.reverse().forEach(async post => {
+          const isOwner = currentUser && post.userId === currentUser.email;
+          const postElement = document.createElement('div');
+          postElement.className = 'post';
+          postElement.dataset.postId = post.id;
+
+          // Fetch user profile picture
+          let profilePicUrl = '';
+          let initial = sanitizeInput(post.displayName?.charAt(0).toUpperCase() || post.userId.charAt(0).toUpperCase());
+          try {
+            const userSnapshot = await db.ref(`users/${post.userId.replace(/\./g, '_')}`).once('value');
+            const userData = userSnapshot.val() || {};
+            if (userData.profilePic && await preloadImage(userData.profilePic)) {
+              profilePicUrl = userData.profilePic;
+            }
+          } catch (error) {
+            console.error('Error fetching user profile picture:', error);
+          }
+
+          // Post header and content
+          const postHeader = document.createElement('div');
+          postHeader.className = 'post-header';
+          postHeader.innerHTML = `
+            <div class="user-avatar ${profilePicUrl ? 'loading' : ''}" onclick="goToProfile('${encodeURIComponent(post.userId)}')">
+              ${profilePicUrl ? '' : initial}
+            </div>
+            <div>
+              <strong>${sanitizeInput(post.displayName || post.userId)}</strong>
+              <div class="post-time">${new Date(post.timestamp).toLocaleString('en-US')}</div>
+            </div>
+            <span class="privacy-indicator">${
+              post.privacy === 'public' ? '🌍 Public' :
+              '🔒 Only Me'
+            }</span>
+            <div class="three-dots" onclick="toggleMenu(this)">⋯</div>
+            <div class="menu-dropdown">
+              <button onclick="downloadImage(this, '${post.image || ''}')">Download</button>
+              ${isOwner ? `
+                <button onclick="editPost(this, '${post.id}')">Edit</button>
+                <button onclick="deletePost(this, '${post.id}')">Delete</button>
+              ` : ''}
+              <button onclick="reportPost(this, '${post.id}')">Report</button>
+            </div>
+          `;
+
+          // Set profile picture for avatar
+          const avatar = postHeader.querySelector('.user-avatar');
+          if (profilePicUrl) {
+            avatar.style.backgroundImage = `url(${profilePicUrl})`;
+            avatar.classList.remove('loading');
+            avatar.onerror = () => handleImageError(avatar, 'avatar');
+          }
+
+          // Post content
+          const postContent = document.createElement('p');
+          postContent.className = 'post-content';
+          postContent.textContent = sanitizeInput(post.content);
+          if (isOwner && post.edited) {
+            postContent.dataset.editable = 'true'; // Allow copying edited posts
+            postContent.oncontextmenu = () => true; // Enable context menu
+          }
+
+          // Post actions
+          const postActions = document.createElement('div');
+          postActions.className = 'post-actions';
+          postActions.innerHTML = `
+            <button class="like-btn ${post.likes && post.likes[currentUser?.email.replace(/\./g, '_')] ? 'liked' : ''}" 
+                    onclick="likePost(this, '${post.id}')">
+              ❤️ ${Object.keys(post.likes || {}).length}
+            </button>
+            <button class="comment-btn" onclick="toggleComments(this)">
+              💬 ${Object.keys(post.comments || {}).length}
+            </button>
+          `;
+
+          // Comment section
+          const commentSection = document.createElement('div');
+          commentSection.className = 'comment-section';
+          commentSection.innerHTML = `
+            <div class="comments-list"></div>
+            <div class="comment-input">
+              <input type="text" placeholder="Write a comment..." onkeypress="handleCommentKeypress(event, this, '${post.id}')">
+              <button onclick="addComment(this, '${post.id}')">Post</button>
+            </div>
+          `;
+
+          // Append elements to post
+          postElement.appendChild(postHeader);
+          postElement.appendChild(postContent);
+
+          // Add image with lazy loading
+          if (post.image) {
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'image-loading';
+            imgContainer.style.height = '400px';
+            postElement.appendChild(imgContainer);
+
+            if (await preloadImage(post.image)) {
+              const img = document.createElement('img');
+              img.src = post.image;
+              img.alt = 'Post image';
+              img.className = 'post-image';
+              img.loading = 'lazy';
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '400px';
+              img.style.objectFit = 'contain';
+              img.style.borderRadius = 'var(--radius)';
+              img.style.margin = '10px 0';
+              img.onerror = () => handleImageError(img);
+              imgContainer.replaceWith(img);
+            } else {
+              imgContainer.className = 'image-placeholder';
+              imgContainer.textContent = 'Failed to load image';
+            }
+          }
+
+          postElement.appendChild(postActions);
+          postElement.appendChild(commentSection);
+
+          feed.appendChild(postElement);
+          loadComments(post.id, postElement.querySelector('.comments-list'));
+        });
+      } catch (error) {
+        showNotification('Error loading posts: ' + error.message, 'error');
+        analytics.logEvent('post_load_error', { error: error.message });
+      }
+    }
+
+    // Load comments
+    function loadComments(postId, commentsList) {
+      db.ref(`posts/${postId}/comments`).once('value', snapshot => {
+        commentsList.innerHTML = '';
+        snapshot.forEach(child => {
+          const comment = child.val();
+          const commentElement = document.createElement('div');
+          commentElement.className = 'comment';
+          commentElement.innerHTML = `<strong>${sanitizeInput(comment.displayName || comment.userId)}:</strong> ${sanitizeInput(comment.content)}`;
+          if (currentUser && comment.userId === currentUser.email) {
+            commentElement.dataset.editable = 'true'; // Allow copying own comments
+            commentElement.oncontextmenu = () => true; // Enable context menu
+          }
+          commentsList.appendChild(commentElement);
+        });
+      });
+    }
+
+    // Download image
+    async function downloadImage(button, imageUrl) {
+      if (!imageUrl) {
+        showNotification('No image available.', 'error');
+        return;
+      }
+      try {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `ARHub_image_${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showNotification('Image downloaded successfully!', 'success');
+        analytics.logEvent('image_download');
+      } catch (error) {
+        showNotification('Error downloading image: ' + error.message, 'error');
+        analytics.logEvent('image_download_error', { error: error.message });
+      }
+      button.closest('.menu-dropdown').style.display = 'none';
+    }
+
+    // Like post
+    async function likePost(button, postId) {
+      if (!currentUser) {
+        showNotification('Please log in to like a post.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const likeRef = db.ref(`posts/${postId}/likes/${currentUser.email.replace(/\./g, '_')}`);
+      const postRef = db.ref(`posts/${postId}`);
+
+      try {
+        const snapshot = await likeRef.once('value');
+        if (snapshot.exists()) {
+          await likeRef.remove();
+          button.classList.remove('liked');
+          const likesSnapshot = await postRef.child('likes').once('value');
+          button.innerHTML = `❤️ ${Object.keys(likesSnapshot.val() || {}).length - 1}`;
+          showNotification('Like removed.', 'success');
+        } else {
+          await likeRef.set(true);
+          button.classList.add('liked');
+          const likesSnapshot = await postRef.child('likes').once('value');
+          button.innerHTML = `❤️ ${Object.keys(likesSnapshot.val() || {}).length + 1}`;
+          showNotification('Post liked successfully!', 'success');
+        }
+        analytics.logEvent('post_like', { postId });
+      } catch (error) {
+        showNotification('Error liking post: ' + error.message, 'error');
+        analytics.logEvent('like_error', { error: error.message });
+      }
+    }
+
+    // Toggle comments
+    function toggleComments(button) {
+      const commentSection = button.closest('.post').querySelector('.comment-section');
+      commentSection.style.display = commentSection.style.display === 'block' ? 'none' : 'block';
+      button.style.background = commentSection.style.display === 'block' ? 'var(--secondary-color)' : 'none';
+    }
+
+    // Handle comment keypress
+    function handleCommentKeypress(event, input, postId) {
+      if (event.key === 'Enter') {
+        input.nextElementSibling.click();
+      }
+    }
+
+    // Add comment
+    async function addComment(button, postId) {
+      if (!currentUser) {
+        showNotification('Please log in to comment.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const now = Date.now();
+      if (commentAttempts >= maxCommentAttempts && now - lastCommentAttempt < 60000) {
+        showNotification('Too many comment attempts. Try again in 1 minute.', 'error');
+        return;
+      }
+
+      const input = button.previousElementSibling;
+      const comment = sanitizeInput(input.value.trim());
+      if (!comment) {
+        showNotification('Please write a comment.', 'error');
+        return;
+      }
+
+      commentAttempts++;
+      lastCommentAttempt = now;
+
+      try {
+        const commentRef = db.ref(`posts/${postId}/comments`).push();
+        await commentRef.set({
+          userId: currentUser.email,
+          displayName: currentUser.displayName || currentUser.email,
+          content: comment,
+          timestamp: Date.now()
+        });
+
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        commentDiv.innerHTML = `<strong>${sanitizeInput(currentUser.displayName || currentUser.email)}:</strong> ${comment}`;
+        commentDiv.dataset.editable = 'true'; // Allow copying own comments
+        commentDiv.oncontextmenu = () => true; // Enable context menu
+        button.closest('.comment-section').querySelector('.comments-list').appendChild(commentDiv);
+        input.value = '';
+
+        const commentBtn = button.closest('.post').querySelector('.comment-btn');
+        const commentsSnapshot = await db.ref(`posts/${postId}/comments`).once('value');
+        commentBtn.innerHTML = `💬 ${Object.keys(commentsSnapshot.val() || {}).length}`;
+        
+        showNotification('Comment added successfully!', 'success');
+        commentAttempts = 0;
+        analytics.logEvent('post_comment', { postId });
+      } catch (error) {
+        showNotification('Error adding comment: ' + error.message, 'error');
+        analytics.logEvent('comment_error', { error: error.message });
+      }
+    }
+
+    // Toggle dropdown menu
+    function toggleMenu(element) {
+      document.querySelectorAll('.menu-dropdown').forEach(menu => {
+        if (menu !== element.nextElementSibling) {
+          menu.style.display = 'none';
+        }
+      });
+      const menu = element.nextElementSibling;
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Edit post
+    async function editPost(button, postId) {
+      if (!currentUser) {
+        showNotification('Please log in to edit a post.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const postRef = db.ref(`posts/${postId}`);
+      try {
+        const snapshot = await postRef.once('value');
+        const post = snapshot.val();
+        if (post.userId !== currentUser.email) {
+          showNotification('You cannot edit this post.', 'error');
+          return;
+        }
+
+        const newContent = sanitizeInput(prompt('Edit post content:', post.content));
+        const newImageUrl = prompt('New image URL (if any):', post.image || '');
+        const newPrivacy = prompt(`Select privacy:\n1. Public\n2. Only Me\n\nEnter number (1-2):`, post.privacy === 'public' ? '1' : '2');
+
+        if (newContent && newContent.trim()) {
+          const updates = { 
+            content: newContent.trim(),
+            edited: true // Mark as edited
+          };
+          if (newImageUrl) {
+            if (!isValidUrl(newImageUrl)) {
+              showNotification('Please provide a valid image URL (jpg, png, gif, webp).', 'error');
+              return;
+            }
+            const isValid = await preloadImage(newImageUrl);
+            if (!isValid) return;
+            updates.image = newImageUrl;
+          } else {
+            updates.image = '';
+          }
+          if (newPrivacy === '1') {
+            updates.privacy = 'public';
+          } else if (newPrivacy === '2') {
+            updates.privacy = 'private';
+          } else {
+            showNotification('Invalid privacy option.', 'error');
+            return;
+          }
+
+          await postRef.update(updates);
+          const postElement = button.closest('.post');
+          const postContent = postElement.querySelector('.post-content');
+          postContent.textContent = newContent.trim();
+          postContent.dataset.editable = 'true'; // Allow copying edited post
+          postContent.oncontextmenu = () => true; // Enable context menu
+          postElement.querySelector('.privacy-indicator').textContent = updates.privacy === 'public' ? '🌍 Public' : '🔒 Only Me';
+          const imgElement = postElement.querySelector('.post-image');
+          if (imgElement && newImageUrl) {
+            imgElement.classList.add('image-loading');
+            imgElement.src = newImageUrl;
+            imgElement.onerror = () => handleImageError(imgElement);
+            imgElement.classList.remove('image-loading');
+          } else if (imgElement && !newImageUrl) {
+            imgElement.remove();
+          } else if (!imgElement && newImageUrl) {
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'image-loading';
+            imgContainer.style.height = '400px';
+            postElement.insertBefore(imgContainer, postElement.querySelector('.post-actions'));
+            const newImg = document.createElement('img');
+            newImg.src = newImageUrl;
+            newImg.alt = 'Post image';
+            newImg.className = 'post-image';
+            newImg.loading = 'lazy';
+            newImg.style.maxWidth = '100%';
+            newImg.style.maxHeight = '400px';
+            newImg.style.objectFit = 'contain';
+            newImg.style.borderRadius = 'var(--radius)';
+            newImg.style.margin = '10px 0';
+            newImg.onerror = () => handleImageError(newImg);
+            imgContainer.replaceWith(newImg);
+          }
+          showNotification('Post updated successfully!', 'success');
+          analytics.logEvent('post_edit', { postId });
+        }
+      } catch (error) {
+        showNotification('Error editing post: ' + error.message, 'error');
+        analytics.logEvent('edit_error', { error: error.message });
+      }
+      button.closest('.menu-dropdown').style.display = 'none';
+    }
+
+    // Delete post
+    async function deletePost(button, postId) {
+      if (!currentUser) {
+        showNotification('Please log in to delete a post.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const postRef = db.ref(`posts/${postId}`);
+      try {
+        const snapshot = await postRef.once('value');
+        const post = snapshot.val();
+        if (post.userId !== currentUser.email) {
+          showNotification('You cannot delete this post.', 'error');
+          return;
+        }
+
+        if (confirm('Are you sure you want to delete this post?')) {
+          const postElement = button.closest('.post');
+          postElement.style.animation = 'fadeOut 0.5s';
+          setTimeout(async () => {
+            await postRef.remove();
+            await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+              postCount: firebase.database.ServerValue.increment(-1)
+            });
+            postElement.remove();
+            showNotification('Post deleted successfully!', 'success');
+            analytics.logEvent('post_delete', { postId });
+          }, 500);
+        }
+      } catch (error) {
+        showNotification('Error deleting post: ' + error.message, 'error');
+        analytics.logEvent('delete_error', { error: error.message });
+      }
+      button.closest('.menu-dropdown').style.display = 'none';
+    }
+
+    // Report post
+    async function reportPost(button, postId) {
+      if (!currentUser) {
+        showNotification('Please log in to report a post.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'Misinformation', 'Other'];
+      const reason = prompt(`Reason for reporting this post:\n\nOptions:\n${reasons.map((r, i) => `${i+1}. ${r}`).join('\n')}\n\nEnter number (1-5):`);
+      
+      if (reason && reason >= 1 && reason <= 5) {
+        try {
+          await db.ref(`reports/${postId}`).push({
+            userId: currentUser.email,
+            reason: reasons[reason - 1],
+            timestamp: Date.now()
+          });
+          showNotification(`Post reported: ${reasons[reason - 1]}`, 'success');
+          analytics.logEvent('post_report', { postId, reason: reasons[reason - 1] });
+        } catch (error) {
+          showNotification('Error reporting post: ' + error.message, 'error');
+          analytics.logEvent('report_error', { error: error.message });
+        }
+      }
+      button.closest('.menu-dropdown').style.display = 'none';
+    }
+
+    // Go to profile
+    function goToProfile(userId) {
+      showNotification(`Opening profile: ${sanitizeInput(decodeURIComponent(userId))}`, 'success');
+      setTimeout(() => {
+        window.location.href = `profile.html?user=${userId}`;
+      }, 1000);
+    }
+
+    // Initialize page
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      loadProfile();
+      loadPosts();
+      if (user) {
+        analytics.logEvent('page_view', { page: 'profile', userId: user.email });
+      } else {
+        showNotification('Please log in.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+      }
+    });
+
+    // Click handler for closing dropdowns
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.three-dots')) {
+        document.querySelectorAll('.menu-dropdown').forEach(menu => {
+          menu.style.display = 'none';
+        });
+      }
+    });
+
+    // Set active navigation item
+    document.addEventListener('DOMContentLoaded', () => {
+      const navLinks = document.querySelectorAll('.bottom-nav nav a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          navLinks.forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+        });
+      });
+    });
+
+    // Animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.8); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
