@@ -333,6 +333,32 @@
       color: var(--text-secondary);
     }
 
+    .tabs {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--primary-color);
+    }
+
+    .tab-content {
+      width: 100%;
+    }
+
     .post-box, .post {
       background: white; /* Enforce light theme background */
       border-radius: 0;
@@ -808,14 +834,14 @@
   <div class="container">
     <div class="profile-box">
       <div class="cover-photo" id="coverPhoto">
-        <div class="cover-photo-icon" onclick="showCoverPhotoForm()"><i class="fas fa-camera"></i></div>
+        <div class="cover-photo-icon" id="coverPhotoIcon" onclick="showCoverPhotoForm()"><i class="fas fa-camera"></i></div>
       </div>
       <div class="profile-section">
         <div class="profile-pic" id="profilePic" onclick="showProfilePicForm()"></div>
         <div class="profile-info">
           <h2 id="profileName">Your Name</h2>
           <p id="profileBio">Welcome to my AR Social profile! 🚀</p>
-          <button onclick="editProfile()">Edit Profile</button>
+          <button id="editProfileBtn" onclick="editProfile()">Edit Profile</button>
         </div>
       </div>
       <div class="stats">
@@ -823,7 +849,7 @@
         <div class="stat-item"><div class="stat-number" id="followersCount">0</div><div class="stat-label">Followers</div></div>
         <div class="stat-item"><div class="stat-number" id="followingCount">0</div><div class="stat-label">Following</div></div>
       </div>
-      <div class="post-box">
+      <div id="postBox" class="post-box">
         <h3>Create a Post</h3>
         <textarea id="postText" placeholder="What's happening?"></textarea>
         <input type="text" id="imgUrl" placeholder="Image URL (e.g., https://example.com/image.jpg)">
@@ -836,7 +862,13 @@
           <button class="secondary-btn" onclick="clearPost()">Clear</button>
         </div>
       </div>
-      <div id="feed"></div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('posts')">Posts</button>
+        <button class="tab-btn" onclick="switchTab('liked')">Liked Posts</button>
+      </div>
+      <div class="tab-content">
+        <div id="feed"></div>
+      </div>
     </div>
   </div>
 
@@ -891,6 +923,10 @@
     const analytics = firebase.analytics();
 
     let currentUser = null;
+    let viewedUserId = null;
+    let viewedUserKey = null;
+    let isOwnProfile = false;
+    let currentTab = 'posts';
     let commentAttempts = 0;
     const maxCommentAttempts = 5;
     let lastCommentAttempt = 0;
@@ -974,15 +1010,13 @@
 
     // Load profile
     async function loadProfile() {
-      if (!currentUser) return;
-
-      const userRef = db.ref(`users/${currentUser.email.replace(/\./g, '_')}`);
+      const userRef = db.ref(`users/${viewedUserKey}`);
       try {
         const snapshot = await userRef.once('value');
         const userData = snapshot.val() || {};
         const profileName = document.getElementById('profileName');
         const profileBio = document.getElementById('profileBio');
-        profileName.textContent = sanitizeInput(userData.displayName || currentUser.email);
+        profileName.textContent = sanitizeInput(userData.displayName || viewedUserId);
         profileBio.textContent = sanitizeInput(userData.bio || 'Welcome to my AR Social profile! 🚀');
         const profilePic = document.getElementById('profilePic');
         const coverPhoto = document.getElementById('coverPhoto');
@@ -1019,19 +1053,27 @@
         }
 
         // Load stats
-        const postsSnapshot = await db.ref('posts').orderByChild('userId').equalTo(currentUser.email).once('value');
+        const postsSnapshot = await db.ref('posts').orderByChild('userId').equalTo(viewedUserId).once('value');
         document.getElementById('postCount').textContent = postsSnapshot.numChildren();
 
-        const followersSnapshot = await db.ref('users').orderByChild(`following/${currentUser.email.replace(/\./g, '_')}`).equalTo(true).once('value');
+        const followersSnapshot = await db.ref('users').orderByChild(`following/${viewedUserKey}`).equalTo(true).once('value');
         document.getElementById('followersCount').textContent = followersSnapshot.numChildren();
 
         const followingSnapshot = await userRef.child('following').once('value');
-        document.getElementById('followingCount').textContent = followingSnapshot.numChildren();
+        document.getElementById('followingCount').textContent = followingSnapshot.numChildren() || 0;
 
         // Allow copying if user edited profile
         if (userData.edited) {
           profileName.dataset.editable = 'true';
           profileBio.dataset.editable = 'true';
+        }
+
+        // Hide edit options if not own profile
+        if (!isOwnProfile) {
+          document.getElementById('editProfileBtn').style.display = 'none';
+          document.getElementById('coverPhotoIcon').style.display = 'none';
+          document.getElementById('profilePic').onclick = null;
+          document.getElementById('postBox').style.display = 'none';
         }
       } catch (error) {
         showNotification('Error loading profile.', 'error');
@@ -1041,11 +1083,7 @@
 
     // Edit profile form
     function editProfile() {
-      if (!currentUser) {
-        showNotification('Please log in to edit your profile.', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 1500);
-        return;
-      }
+      if (!isOwnProfile) return;
       const editForm = document.getElementById('editProfileForm');
       document.getElementById('editName').value = document.getElementById('profileName').textContent;
       document.getElementById('editBio').value = document.getElementById('profileBio').textContent;
@@ -1055,7 +1093,7 @@
 
     // Save profile
     async function saveProfile() {
-      if (!currentUser) return;
+      if (!isOwnProfile) return;
       const name = sanitizeInput(document.getElementById('editName').value.trim());
       const bio = sanitizeInput(document.getElementById('editBio').value.trim());
       if (!name) {
@@ -1064,7 +1102,7 @@
       }
       try {
         await auth.currentUser.updateProfile({ displayName: name });
-        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+        await db.ref(`users/${viewedUserKey}`).update({
           displayName: name,
           bio: bio || 'Welcome to my AR Social profile! 🚀',
           edited: true // Mark as edited
@@ -1092,11 +1130,7 @@
 
     // Show profile picture form
     function showProfilePicForm() {
-      if (!currentUser) {
-        showNotification('Please log in to edit your profile picture.', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 1500);
-        return;
-      }
+      if (!isOwnProfile) return;
       const profilePicForm = document.getElementById('editProfilePicForm');
       profilePicForm.style.display = 'block';
       profilePicForm.classList.add('show');
@@ -1104,11 +1138,7 @@
 
     // Show cover photo form
     function showCoverPhotoForm() {
-      if (!currentUser) {
-        showNotification('Please log in to edit your cover photo.', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 1500);
-        return;
-      }
+      if (!isOwnProfile) return;
       const coverPhotoForm = document.getElementById('editCoverPhotoForm');
       coverPhotoForm.style.display = 'block';
       coverPhotoForm.classList.add('show');
@@ -1116,7 +1146,7 @@
 
     // Save profile picture
     async function saveProfilePic() {
-      if (!currentUser) return;
+      if (!isOwnProfile) return;
       const url = document.getElementById('editProfilePicUrl').value.trim();
       if (!url) {
         showNotification('Please provide an image URL.', 'error');
@@ -1130,7 +1160,7 @@
         const isValid = await preloadImage(url);
         if (!isValid) return;
         await auth.currentUser.updateProfile({ photoURL: url });
-        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({ profilePic: url });
+        await db.ref(`users/${viewedUserKey}`).update({ profilePic: url });
         const profilePic = document.getElementById('profilePic');
         profilePic.classList.add('image-loading');
         profilePic.style.backgroundImage = `url(${url})`;
@@ -1147,7 +1177,7 @@
 
     // Save cover photo
     async function saveCoverPhoto() {
-      if (!currentUser) return;
+      if (!isOwnProfile) return;
       const url = document.getElementById('editCoverPhotoUrl').value.trim();
       if (!url) {
         showNotification('Please provide an image URL.', 'error');
@@ -1160,7 +1190,7 @@
       try {
         const isValid = await preloadImage(url);
         if (!isValid) return;
-        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({ coverPhoto: url });
+        await db.ref(`users/${viewedUserKey}`).update({ coverPhoto: url });
         const coverPhoto = document.getElementById('coverPhoto');
         coverPhoto.classList.add('image-loading');
         coverPhoto.style.backgroundImage = `url(${url})`;
@@ -1182,11 +1212,7 @@
 
     // Create post
     async function createPost() {
-      if (!currentUser) {
-        showNotification('Please log in to create a post.', 'warning');
-        setTimeout(() => window.location.href = 'login.html', 1500);
-        return;
-      }
+      if (!isOwnProfile) return;
       const text = sanitizeInput(document.getElementById('postText').value.trim());
       const imageUrl = document.getElementById('imgUrl').value.trim();
       const privacy = document.getElementById('postPrivacy').value;
@@ -1218,11 +1244,11 @@
           timestamp: Date.now(),
           edited: false
         });
-        await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+        await db.ref(`users/${viewedUserKey}`).update({
           postCount: firebase.database.ServerValue.increment(1)
         });
         clearPost();
-        loadPosts();
+        switchTab(currentTab); // Reload current tab
         showNotification('Post created successfully!', 'success');
         analytics.logEvent('post_create');
       } catch (error) {
@@ -1237,13 +1263,25 @@
       document.getElementById('postPrivacy').value = 'public';
     }
 
-    // Load posts
-    async function loadPosts() {
+    // Switch tabs
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+      if (tab === 'posts') {
+        loadUserPosts();
+      } else if (tab === 'liked') {
+        loadLikedPosts();
+      }
+    }
+
+    // Load user's posts
+    async function loadUserPosts() {
       const feed = document.getElementById('feed');
       feed.innerHTML = '<div class="image-loading" style="width: 100%; height: 100px;"></div>';
 
       try {
-        const snapshot = await db.ref('posts').once('value');
+        const snapshot = await db.ref('posts').orderByChild('userId').equalTo(viewedUserId).once('value');
         feed.innerHTML = '';
         if (!snapshot.exists()) {
           feed.innerHTML = '<div style="text-align: center; color: var(--text-secondary); width: 100%;">No posts available</div>';
@@ -1253,141 +1291,178 @@
         const posts = [];
         snapshot.forEach(child => {
           const post = child.val();
-          const isOwner = currentUser && post.userId === currentUser.email;
           const isPublic = post.privacy === 'public';
-          const isPrivate = post.privacy === 'private' && isOwner;
-
-          if (isOwner || isPublic) {
+          if (isOwnProfile || isPublic) {
             posts.push({ id: child.key, ...post });
           }
         });
 
-        posts.reverse().forEach(async post => {
-          const isOwner = currentUser && post.userId === currentUser.email;
-          const postElement = document.createElement('div');
-          postElement.className = 'post';
-          postElement.dataset.postId = post.id;
+        posts.sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending
 
-          // Fetch user profile picture
-          let profilePicUrl = '';
-          let initial = sanitizeInput(post.displayName?.charAt(0).toUpperCase() || post.userId.charAt(0).toUpperCase());
-          try {
-            const userSnapshot = await db.ref(`users/${post.userId.replace(/\./g, '_')}`).once('value');
-            const userData = userSnapshot.val() || {};
-            if (userData.profilePic && await preloadImage(userData.profilePic)) {
-              profilePicUrl = userData.profilePic;
-            }
-          } catch (error) {
-            console.error('Error fetching user profile picture:', error);
-          }
-
-          // Post header and content
-          const postHeader = document.createElement('div');
-          postHeader.className = 'post-header';
-          postHeader.innerHTML = `
-            <div class="user-avatar ${profilePicUrl ? 'loading' : ''}" onclick="goToProfile('${encodeURIComponent(post.userId)}')">
-              ${profilePicUrl ? '' : initial}
-            </div>
-            <div>
-              <strong>${sanitizeInput(post.displayName || post.userId)}</strong>
-              <div class="post-time">${new Date(post.timestamp).toLocaleString('en-US')}</div>
-            </div>
-            <span class="privacy-indicator">${
-              post.privacy === 'public' ? '🌍 Public' :
-              '🔒 Only Me'
-            }</span>
-            <div class="three-dots" onclick="toggleMenu(this)">⋯</div>
-            <div class="menu-dropdown">
-              <button onclick="downloadImage(this, '${post.image || ''}')">Download</button>
-              ${isOwner ? `
-                <button onclick="editPost(this, '${post.id}')">Edit</button>
-                <button onclick="deletePost(this, '${post.id}')">Delete</button>
-              ` : ''}
-              <button onclick="reportPost(this, '${post.id}')">Report</button>
-            </div>
-          `;
-
-          // Set profile picture for avatar
-          const avatar = postHeader.querySelector('.user-avatar');
-          if (profilePicUrl) {
-            avatar.style.backgroundImage = `url(${profilePicUrl})`;
-            avatar.classList.remove('loading');
-            avatar.onerror = () => handleImageError(avatar, 'avatar');
-          }
-
-          // Post content
-          const postContent = document.createElement('p');
-          postContent.className = 'post-content';
-          postContent.textContent = sanitizeInput(post.content);
-          if (isOwner && post.edited) {
-            postContent.dataset.editable = 'true'; // Allow copying edited posts
-            postContent.oncontextmenu = () => true; // Enable context menu
-          }
-
-          // Post actions
-          const postActions = document.createElement('div');
-          postActions.className = 'post-actions';
-          postActions.innerHTML = `
-            <button class="like-btn ${post.likes && post.likes[currentUser?.email.replace(/\./g, '_')] ? 'liked' : ''}" 
-                    onclick="likePost(this, '${post.id}')">
-              ❤️ ${Object.keys(post.likes || {}).length}
-            </button>
-            <button class="comment-btn" onclick="toggleComments(this)">
-              💬 ${Object.keys(post.comments || {}).length}
-            </button>
-          `;
-
-          // Comment section
-          const commentSection = document.createElement('div');
-          commentSection.className = 'comment-section';
-          commentSection.innerHTML = `
-            <div class="comments-list"></div>
-            <div class="comment-input">
-              <input type="text" placeholder="Write a comment..." onkeypress="handleCommentKeypress(event, this, '${post.id}')">
-              <button onclick="addComment(this, '${post.id}')">Post</button>
-            </div>
-          `;
-
-          // Append elements to post
-          postElement.appendChild(postHeader);
-          postElement.appendChild(postContent);
-
-          // Add image with lazy loading
-          if (post.image) {
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'image-loading';
-            imgContainer.style.height = '400px';
-            postElement.appendChild(imgContainer);
-
-            if (await preloadImage(post.image)) {
-              const img = document.createElement('img');
-              img.src = post.image;
-              img.alt = 'Post image';
-              img.className = 'post-image';
-              img.loading = 'lazy';
-              img.style.maxWidth = '100%';
-              img.style.maxHeight = '400px';
-              img.style.objectFit = 'contain';
-              img.style.borderRadius = 'var(--radius)';
-              img.style.margin = '10px 0';
-              img.onerror = () => handleImageError(img);
-              imgContainer.replaceWith(img);
-            } else {
-              imgContainer.className = 'image-placeholder';
-              imgContainer.textContent = 'Failed to load image';
-            }
-          }
-
-          postElement.appendChild(postActions);
-          postElement.appendChild(commentSection);
-
-          feed.appendChild(postElement);
-          loadComments(post.id, postElement.querySelector('.comments-list'));
-        });
+        for (const post of posts) {
+          await renderPost(post, feed);
+        }
       } catch (error) {
         showNotification('Error loading posts: ' + error.message, 'error');
         analytics.logEvent('post_load_error', { error: error.message });
       }
+    }
+
+    // Load liked posts
+    async function loadLikedPosts() {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '<div class="image-loading" style="width: 100%; height: 100px;"></div>';
+
+      try {
+        const snapshot = await db.ref('posts').once('value');
+        feed.innerHTML = '';
+        if (!snapshot.exists()) {
+          feed.innerHTML = '<div style="text-align: center; color: var(--text-secondary); width: 100%;">No liked posts available</div>';
+          return;
+        }
+
+        const posts = [];
+        snapshot.forEach(child => {
+          const post = child.val();
+          const likes = post.likes || {};
+          if (likes[viewedUserKey]) {
+            posts.push({ id: child.key, ...post });
+          }
+        });
+
+        posts.sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp descending
+
+        for (const post of posts) {
+          await renderPost(post, feed);
+        }
+      } catch (error) {
+        showNotification('Error loading liked posts: ' + error.message, 'error');
+        analytics.logEvent('liked_posts_load_error', { error: error.message });
+      }
+    }
+
+    // Render a post
+    async function renderPost(post, feed) {
+      const isOwner = currentUser && post.userId === currentUser.email;
+      const postElement = document.createElement('div');
+      postElement.className = 'post';
+      postElement.dataset.postId = post.id;
+
+      // Fetch user profile picture
+      let profilePicUrl = '';
+      let initial = sanitizeInput(post.displayName?.charAt(0).toUpperCase() || post.userId.charAt(0).toUpperCase());
+      try {
+        const userSnapshot = await db.ref(`users/${post.userId.replace(/\./g, '_')}`).once('value');
+        const userData = userSnapshot.val() || {};
+        if (userData.profilePic && await preloadImage(userData.profilePic)) {
+          profilePicUrl = userData.profilePic;
+        }
+      } catch (error) {
+        console.error('Error fetching user profile picture:', error);
+      }
+
+      // Post header and content
+      const postHeader = document.createElement('div');
+      postHeader.className = 'post-header';
+      postHeader.innerHTML = `
+        <div class="user-avatar ${profilePicUrl ? 'loading' : ''}" onclick="goToProfile('${encodeURIComponent(post.userId)}')">
+          ${profilePicUrl ? '' : initial}
+        </div>
+        <div>
+          <strong>${sanitizeInput(post.displayName || post.userId)}</strong>
+          <div class="post-time">${new Date(post.timestamp).toLocaleString('en-US')}</div>
+        </div>
+        <span class="privacy-indicator">${
+          post.privacy === 'public' ? '🌍 Public' :
+          '🔒 Only Me'
+        }</span>
+        <div class="three-dots" onclick="toggleMenu(this)">⋯</div>
+        <div class="menu-dropdown">
+          <button onclick="downloadImage(this, '${post.image || ''}')">Download</button>
+          ${isOwner ? `
+            <button onclick="editPost(this, '${post.id}')">Edit</button>
+            <button onclick="deletePost(this, '${post.id}')">Delete</button>
+          ` : ''}
+          <button onclick="reportPost(this, '${post.id}')">Report</button>
+        </div>
+      `;
+
+      // Set profile picture for avatar
+      const avatar = postHeader.querySelector('.user-avatar');
+      if (profilePicUrl) {
+        avatar.style.backgroundImage = `url(${profilePicUrl})`;
+        avatar.classList.remove('loading');
+        avatar.onerror = () => handleImageError(avatar, 'avatar');
+      }
+
+      // Post content
+      const postContent = document.createElement('p');
+      postContent.className = 'post-content';
+      postContent.textContent = sanitizeInput(post.content);
+      if (isOwner && post.edited) {
+        postContent.dataset.editable = 'true'; // Allow copying edited posts
+        postContent.oncontextmenu = () => true; // Enable context menu
+      }
+
+      // Post actions
+      const postActions = document.createElement('div');
+      postActions.className = 'post-actions';
+      postActions.innerHTML = `
+        <button class="like-btn ${post.likes && post.likes[currentUser?.email.replace(/\./g, '_')] ? 'liked' : ''}" 
+                onclick="likePost(this, '${post.id}')">
+          ❤️ ${Object.keys(post.likes || {}).length}
+        </button>
+        <button class="comment-btn" onclick="toggleComments(this)">
+          💬 ${Object.keys(post.comments || {}).length}
+        </button>
+      `;
+
+      // Comment section
+      const commentSection = document.createElement('div');
+      commentSection.className = 'comment-section';
+      commentSection.innerHTML = `
+        <div class="comments-list"></div>
+        <div class="comment-input">
+          <input type="text" placeholder="Write a comment..." onkeypress="handleCommentKeypress(event, this, '${post.id}')">
+          <button onclick="addComment(this, '${post.id}')">Post</button>
+        </div>
+      `;
+
+      // Append elements to post
+      postElement.appendChild(postHeader);
+      postElement.appendChild(postContent);
+
+      // Add image with lazy loading
+      if (post.image) {
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'image-loading';
+        imgContainer.style.height = '400px';
+        postElement.appendChild(imgContainer);
+
+        if (await preloadImage(post.image)) {
+          const img = document.createElement('img');
+          img.src = post.image;
+          img.alt = 'Post image';
+          img.className = 'post-image';
+          img.loading = 'lazy';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '400px';
+          img.style.objectFit = 'contain';
+          img.style.borderRadius = 'var(--radius)';
+          img.style.margin = '10px 0';
+          img.onerror = () => handleImageError(img);
+          imgContainer.replaceWith(img);
+        } else {
+          imgContainer.className = 'image-placeholder';
+          imgContainer.textContent = 'Failed to load image';
+        }
+      }
+
+      postElement.appendChild(postActions);
+      postElement.appendChild(commentSection);
+
+      feed.appendChild(postElement);
+      loadComments(post.id, postElement.querySelector('.comments-list'));
     }
 
     // Load comments
@@ -1447,13 +1522,13 @@
           await likeRef.remove();
           button.classList.remove('liked');
           const likesSnapshot = await postRef.child('likes').once('value');
-          button.innerHTML = `❤️ ${Object.keys(likesSnapshot.val() || {}).length - 1}`;
+          button.innerHTML = `❤️ ${likesSnapshot.numChildren() || 0}`;
           showNotification('Like removed.', 'success');
         } else {
           await likeRef.set(true);
           button.classList.add('liked');
           const likesSnapshot = await postRef.child('likes').once('value');
-          button.innerHTML = `❤️ ${Object.keys(likesSnapshot.val() || {}).length + 1}`;
+          button.innerHTML = `❤️ ${likesSnapshot.numChildren() || 0}`;
           showNotification('Post liked successfully!', 'success');
         }
         analytics.logEvent('post_like', { postId });
@@ -1520,7 +1595,7 @@
 
         const commentBtn = button.closest('.post').querySelector('.comment-btn');
         const commentsSnapshot = await db.ref(`posts/${postId}/comments`).once('value');
-        commentBtn.innerHTML = `💬 ${Object.keys(commentsSnapshot.val() || {}).length}`;
+        commentBtn.innerHTML = `💬 ${commentsSnapshot.numChildren() || 0}`;
         
         showNotification('Comment added successfully!', 'success');
         commentAttempts = 0;
@@ -1653,7 +1728,7 @@
           postElement.style.animation = 'fadeOut 0.5s';
           setTimeout(async () => {
             await postRef.remove();
-            await db.ref(`users/${currentUser.email.replace(/\./g, '_')}`).update({
+            await db.ref(`users/${viewedUserKey}`).update({
               postCount: firebase.database.ServerValue.increment(-1)
             });
             postElement.remove();
@@ -1705,16 +1780,24 @@
     }
 
     // Initialize page
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(async user => {
       currentUser = user;
-      loadProfile();
-      loadPosts();
-      if (user) {
-        analytics.logEvent('page_view', { page: 'profile', userId: user.email });
-      } else {
+      if (!currentUser) {
         showNotification('Please log in.', 'warning');
         setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
       }
+
+      // Parse query param for viewed user
+      const urlParams = new URLSearchParams(window.location.search);
+      viewedUserId = urlParams.get('user') || currentUser.email;
+      viewedUserKey = viewedUserId.replace(/\./g, '_');
+      isOwnProfile = viewedUserId === currentUser.email;
+
+      await loadProfile();
+      switchTab('posts'); // Load default tab
+
+      analytics.logEvent('page_view', { page: 'profile', userId: currentUser.email, viewedUserId });
     });
 
     // Click handler for closing dropdowns
