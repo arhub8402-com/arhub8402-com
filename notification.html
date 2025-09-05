@@ -22,10 +22,10 @@
       --primary-color: #6366f1;
       --primary-dark: #4f46e5;
       --primary-light: #818cf8;
-      --secondary-color: #f8fafc; /* Light theme background */
-      --text-primary: #1e293b; /* Light theme text */
-      --text-secondary: #64748b; /* Light theme secondary text */
-      --border-color: #e2e8f0; /* Light theme border */
+      --secondary-color: #f8fafc;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
       --success-color: #22c55e;
       --error-color: #ef4444;
       --warning-color: #f59e0b;
@@ -45,12 +45,11 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding-top: 70px;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
       color: var(--text-primary);
       user-select: none;
-      width: 100vw;
-      overflow-x: hidden;
     }
 
     .top-header {
@@ -66,7 +65,6 @@
       justify-content: space-between;
       box-shadow: var(--shadow-md);
       animation: slideDown 0.5s ease-out;
-      user-select: none;
     }
 
     .back-btn, .issue-btn {
@@ -93,24 +91,25 @@
     }
 
     .container {
-      max-width: 600px;
-      margin: auto;
+      max-width: 100%;
+      height: calc(100vh - 70px);
+      margin: 70px auto 0;
       padding: 15px;
-      width: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
 
     .account-info {
       background: white;
-      margin-bottom: 20px;
       border-radius: var(--radius-lg);
       padding: 15px;
       box-shadow: var(--shadow-md);
     }
 
-    /* Notification Controls */
     .notification-controls {
       background: white;
-      margin-bottom: 15px;
       border-radius: var(--radius-lg);
       padding: 15px;
       box-shadow: var(--shadow-md);
@@ -125,12 +124,14 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      flex: 1;
+      justify-content: flex-end;
     }
 
     .search-container {
       position: relative;
       flex: 1;
-      min-width: 250px;
+      min-width: 200px;
     }
 
     .search-input {
@@ -223,6 +224,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
+      flex-wrap: wrap;
     }
 
     .stat-item {
@@ -236,6 +238,8 @@
       border-radius: var(--radius-lg);
       padding: 15px;
       box-shadow: var(--shadow-md);
+      flex: 1;
+      overflow-y: auto;
     }
 
     .notification-item {
@@ -260,10 +264,6 @@
     .notification-item.unread {
       background: #e8f5e8;
       border-left: 3px solid var(--success-color);
-    }
-
-    .notification-item.hidden {
-      display: none;
     }
 
     .notification-icon {
@@ -311,7 +311,6 @@
       transform: translateX(100%);
       transition: all 0.4s ease;
       z-index: 1000;
-      user-select: none;
     }
 
     .notification.show {
@@ -400,6 +399,10 @@
     }
 
     @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+
       .notification-controls {
         flex-direction: column;
         align-items: stretch;
@@ -418,6 +421,11 @@
         justify-content: center;
         flex-wrap: wrap;
       }
+
+      .issue-form {
+        width: 95%;
+        padding: 15px;
+      }
     }
   </style>
 </head>
@@ -425,20 +433,20 @@
   <div id="notification" class="notification"></div>
 
   <header class="top-header">
-    <a href="Index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    <a href="Index.html" class="back-btn" aria-label="Back to home"><i class="fas fa-arrow-left"></i> Back</a>
     <div class="app-name">Notifications</div>
-    <button class="issue-btn" onclick="toggleIssueForm()"><i class="fas fa-exclamation-circle"></i></button>
+    <button class="issue-btn" onclick="toggleIssueForm()" aria-label="Report an issue"><i class="fas fa-exclamation-circle"></i></button>
   </header>
 
   <div class="issue-form-container" id="issue-form-container">
     <div class="issue-form">
       <h3>Report an Issue</h3>
       <form id="issue-form">
-        <input type="email" id="issue-email" placeholder="Your Email" required>
-        <input type="text" id="issue-username" placeholder="Your Username" required>
-        <textarea id="issue-description" placeholder="Describe your issue" required></textarea>
-        <button type="submit">Submit</button>
-        <button type="button" class="close-btn" onclick="toggleIssueForm()">Close</button>
+        <input type="email" id="issue-email" placeholder="Your Email" required aria-label="Your email">
+        <input type="text" id="issue-username" placeholder="Your Username" required aria-label="Your username">
+        <textarea id="issue-description" placeholder="Describe your issue" required aria-label="Issue description"></textarea>
+        <button type="submit" aria-label="Submit issue">Submit</button>
+        <button type="button" class="close-btn" onclick="toggleIssueForm()" aria-label="Close issue form">Close</button>
       </form>
     </div>
   </div>
@@ -446,15 +454,14 @@
   <div class="container">
     <div id="account-info" class="account-info"></div>
     
-    <!-- Notification Controls -->
     <div class="notification-controls">
       <div class="search-container">
-        <input type="text" class="search-input" id="search-input" placeholder="Search notifications...">
+        <input type="text" class="search-input" id="search-input" placeholder="Search notifications..." aria-label="Search notifications">
         <i class="fas fa-search search-icon"></i>
       </div>
       
       <div class="control-group">
-        <select class="filter-select" id="filter-select">
+        <select class="filter-select" id="filter-select" aria-label="Filter notifications">
           <option value="all">All Notifications</option>
           <option value="unread">Unread Only</option>
           <option value="like">Likes</option>
@@ -462,12 +469,12 @@
           <option value="follow">Follows</option>
         </select>
         
-        <button class="control-btn primary" id="mark-all-read" onclick="markAllAsRead()">
+        <button class="control-btn primary" id="mark-all-read" onclick="markAllAsRead()" aria-label="Mark all notifications as read">
           <i class="fas fa-check-double"></i>
           Mark All Read
         </button>
         
-        <button class="control-btn danger" id="clear-all" onclick="clearAllNotifications()">
+        <button class="control-btn danger" id="clear-all" onclick="clearAllNotifications()" aria-label="Clear all notifications">
           <i class="fas fa-trash"></i>
           Clear All
         </button>
@@ -485,9 +492,7 @@
       </div>
     </div>
 
-    <div id="notification-list" class="notification-list">
-      <div class="loading">Loading notifications...</div>
-    </div>
+    <div id="notification-list" class="notification-list"></div>
   </div>
 
   <script>
@@ -538,7 +543,6 @@
       document.getElementById('total-count').textContent = totalCount;
       document.getElementById('unread-count').textContent = unreadCount;
       
-      // Enable/disable buttons based on notification count
       const markAllBtn = document.getElementById('mark-all-read');
       const clearAllBtn = document.getElementById('clear-all');
       
@@ -552,11 +556,9 @@
       const filterType = document.getElementById('filter-select').value;
       
       filteredNotifications = allNotifications.filter(notif => {
-        // Search filter
         const matchesSearch = searchTerm === '' || 
           notif.message.toLowerCase().includes(searchTerm);
         
-        // Type filter
         const matchesFilter = filterType === 'all' || 
           (filterType === 'unread' && notif.unread) ||
           (filterType !== 'unread' && notif.type === filterType);
@@ -580,7 +582,6 @@
       filteredNotifications.forEach(notif => {
         const item = document.createElement('div');
         
-        // Determine notification type and icon
         let iconClass = '';
         if (notif.type === 'like') {
           iconClass = 'like fas fa-heart';
@@ -638,7 +639,6 @@
         
         await db.ref().update(updates);
         
-        // Update UI
         document.querySelectorAll('.notification-item.unread').forEach(item => {
           item.classList.remove('unread');
         });
@@ -714,7 +714,7 @@
       try {
         const notifRef = db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}`);
         const snapshot = await notifRef.once('value');
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
         snapshot.forEach(child => {
           const notif = child.val();
@@ -741,7 +741,6 @@
         const userData = userSnapshot.val() || {};
         const createdDate = userData.createdAt ? new Date(userData.createdAt).toLocaleString('en-US') : 'Unknown';
 
-        // Fetch total likes and comments across all posts
         const postsSnapshot = await db.ref('posts').once('value');
         let totalLikes = 0;
         let totalComments = 0;
@@ -780,9 +779,7 @@
       }
 
       try {
-        // Delete old notifications before loading
         await deleteOldNotifications();
-
         const notifRef = db.ref(`notifications/${currentUser.email.replace(/\./g, '_')}`);
         const snapshot = await notifRef.once('value');
         
@@ -792,7 +789,6 @@
             allNotifications.push({ id: child.key, ...child.val() });
           });
           
-          // Sort by timestamp (newest first)
           allNotifications.sort((a, b) => b.timestamp - a.timestamp);
         }
 
